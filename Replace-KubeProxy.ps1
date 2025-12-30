@@ -30,8 +30,8 @@ foreach ($pod in $allHpcPods) {
     Write-Host "Finished updating kube-proxy in Pod: $pod." -ForegroundColor Green
 }
 
-Write-Host "Waiting 90 seconds for Pods to restart and KubeProxy service to come online..." -ForegroundColor Yellow
-Start-Sleep -Seconds 90
+Write-Host "Waiting 5 seconds for KubeProxy service to come online..." -ForegroundColor Yellow
+Start-Sleep -Seconds 5
 
 foreach ($pod in $allHpcPods) {
     Write-Host "Verifying KubeProxy service status in Pod: $pod" -ForegroundColor DarkYellow

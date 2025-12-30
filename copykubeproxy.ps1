@@ -5,7 +5,7 @@ if (-not (Test-Path -Path C:\k\kube-proxy.exe)) {
 }
 .\sfpcopy.exe .\kubeproxy\kube-proxy.exe C:\k\kube-proxy.exe
 Stop-Service -Force KubeProxy
-Start-Sleep -Seconds 1
+Start-Sleep -Seconds 2
 rm C:\k\kubeproxy.err.log -ErrorAction SilentlyContinue
-Restart-Computer -Force
-
+Restart-Service -Force hns
+Start-Service KubeProxy
