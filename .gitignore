@@ -1,0 +1,7 @@
+# Exclude executable files
+*.exe
+*.zip
+*.log
+*.json
+*.xml
+*.txt
