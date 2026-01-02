@@ -5,8 +5,6 @@ param(
 
 .\modules\Create-Rg.ps1
 
-.\modules\Create-Cluster-Singlestack.ps1
-
 if ($isSingleStack) {
     .\modules\Create-Cluster-Singlestack.ps1
 } else {
@@ -14,3 +12,5 @@ if ($isSingleStack) {
 }
 
 .\modules\Create-Nodepool.ps1
+
+.\Create-PodsAndServices.ps1
