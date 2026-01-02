@@ -34,6 +34,7 @@ foreach ($pod in $allHpcPods) {
     kubectl cp -n $namespace $pod`:logs.zip "$pod.zip"
     move-item -Force "$pod.zip" "$FolderPath\$pod.zip"
     Write-Host "Finished collecting logs from Pod: $pod" -ForegroundColor Green
+    Expand-Archive -Path "$FolderPath\$pod.zip" -DestinationPath "$FolderPath\$pod" -Force
 }
 
 Write-Host "All logs collected and stored in folder: $FolderPath" -ForegroundColor Magenta
