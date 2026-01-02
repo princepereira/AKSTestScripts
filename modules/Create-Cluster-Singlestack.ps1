@@ -1,4 +1,4 @@
-Import-Module -Force .\constants.psm1
+Import-Module -Force .\modules\constants.psm1
 
 $rgName = $Global:RG_NAME
 $location = $Global:LOCATION
