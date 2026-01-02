@@ -6,5 +6,5 @@ $clusterName = $Global:CLUSTER_NAME
 $nodePoolName = $Global:NODE_POOL_NAME
 
 Write-Host "Deleting Node Pool: $nodePoolName from Cluster: $clusterName" -ForegroundColor Cyan
-az aks nodepool delete --resource-group $rgName --cluster-name $clusterName --name $nodePoolName --yes
+az aks nodepool delete --resource-group $rgName --cluster-name $clusterName --name $nodePoolName
 Write-Host "Node Pool: $nodePoolName deleted successfully from Cluster: $clusterName." -ForegroundColor Green
