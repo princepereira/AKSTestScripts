@@ -13,18 +13,18 @@ function Get-AllHpcPods {
 }
 
 Write-Host "Preparing kube-proxy package for deployment to HPC Pods" -ForegroundColor Yellow
-rm -r -Force kubeproxy.zip -ErrorAction SilentlyContinue
-$kubeProxyHash = (Get-FileHash -Path .\kube-proxy.exe).Hash
-Compress-Archive kube-proxy.exe kubeproxy.zip -Force
+rm -r -Force .\bins\kubeproxy.zip -ErrorAction SilentlyContinue
+$kubeProxyHash = (Get-FileHash -Path .\bins\kube-proxy.exe).Hash
+Compress-Archive .\bins\kube-proxy.exe .\bins\kubeproxy.zip -Force
 
 $allHpcPods = Get-AllHpcPods
 foreach ($pod in $allHpcPods) {
     Write-Host "Copying 'copykubeproxy.ps1' script to Pod: $pod" -ForegroundColor DarkYellow
-    kubectl cp -n $namespace .\copykubeproxy.ps1 $pod`:copykubeproxy.ps1
+    kubectl cp -n $namespace .\modules\copykubeproxy.ps1 $pod`:copykubeproxy.ps1
     Write-Host "Copying 'sfpcopy.exe' and 'kubeproxy.zip' to Pod: $pod" -ForegroundColor DarkYellow
-    kubectl cp -n $namespace .\sfpcopy.exe $pod`:sfpcopy.exe
+    kubectl cp -n $namespace .\bins\sfpcopy.exe $pod`:sfpcopy.exe
     Write-Host "Copying 'kubeproxy.zip' to Pod: $pod" -ForegroundColor DarkYellow
-    kubectl cp -n $namespace .\kubeproxy.zip $pod`:kubeproxy.zip
+    kubectl cp -n $namespace .\bins\kubeproxy.zip $pod`:kubeproxy.zip
     Write-Host "Executing 'copykubeproxy.ps1' script in Pod: $pod" -ForegroundColor DarkYellow
     kubectl exec -n $namespace $pod -- powershell -Command ".\copykubeproxy.ps1"
     Write-Host "Finished updating kube-proxy in Pod: $pod." -ForegroundColor Green
