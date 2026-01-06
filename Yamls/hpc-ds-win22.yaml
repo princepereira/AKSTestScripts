@@ -40,3 +40,4 @@ spec:
           path: C:\k
       nodeSelector:
         kubernetes.azure.com/os-sku: Windows2022
+        # kubernetes.azure.com/os-sku: WindowsAnnual

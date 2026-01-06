@@ -17,6 +17,7 @@ spec:
     spec:
       nodeSelector:
         "kubernetes.io/os": windows
+        # "kubernetes.azure.com/os-sku": WindowsAnnual
       containers:
         - name: tcp-server
           image: mcr.microsoft.com/dotnet/framework/samples:aspnetapp
