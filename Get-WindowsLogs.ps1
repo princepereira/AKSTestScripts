@@ -27,7 +27,7 @@ $allHpcPods = Get-AllHpcPods
 foreach ($pod in $allHpcPods) {
     Write-Host "Collecting Windows Logs from Pod: $pod" -ForegroundColor Yellow
     Write-Host "Copying collect script to Pod: $pod" -ForegroundColor DarkYellow
-    kubectl cp -n $namespace .\collectlogs.ps1 $pod`:collectlogs.ps1
+    kubectl cp -n $namespace .\modules\collectlogs.ps1 $pod`:collectlogs.ps1
     Write-Host "Executing collect script in Pod: $pod" -ForegroundColor DarkYellow
     kubectl exec -n $namespace $pod -- powershell -Command ".\collectlogs.ps1"
     Write-Host "Copying logs.zip from Pod: $pod" -ForegroundColor DarkYellow
