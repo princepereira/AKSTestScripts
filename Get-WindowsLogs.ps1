@@ -10,7 +10,11 @@ $FolderPath = Join-Path -Path $RootDir -ChildPath $DstPath
 if (-Not (Test-Path -Path $FolderPath)) {
     New-Item -ItemType Directory -Path $FolderPath | Out-Null
 }
-rm -r -Force "$FolderPath\*" -ErrorAction SilentlyContinue
+
+$podsAndServicesLog = Join-Path -Path $FolderPath -ChildPath "nodes-pods-services.txt"
+$servicesInDetailLog = Join-Path -Path $FolderPath -ChildPath "services-detail.txt"
+
+Remove-Item -Recurse -Force "$FolderPath\*" -ErrorAction SilentlyContinue
 
 # Returns a map of HPC Pod Names to Node Names
 function Get-AllHpcPods {
@@ -22,6 +26,28 @@ function Get-AllHpcPods {
     }
     return $allHpcPods
 }
+
+#============================================================================#
+
+Write-Host "Collecting cluster information..." -ForegroundColor Yellow
+
+Write-Output "`n======================= NODES =======================`n" | Out-File -FilePath $podsAndServicesLog -Encoding utf8 -Append
+kubectl get nodes -o wide | Out-File -FilePath $podsAndServicesLog -Encoding utf8 -Append
+Write-Output "`n======================= PODS =======================`n" | Out-File -FilePath $podsAndServicesLog -Encoding utf8 -Append
+kubectl get pods -n $namespace -o wide | Out-File -FilePath $podsAndServicesLog -Encoding utf8 -Append
+Write-Output "`n======================= SERVICES =======================`n" | Out-File -FilePath $podsAndServicesLog -Encoding utf8 -Append
+kubectl get svc -n $namespace -o wide | Out-File -FilePath $podsAndServicesLog -Encoding utf8 -Append
+
+Write-Output "`n======================= SERVICES IN DETAIL =======================`n" | Out-File -FilePath $servicesInDetailLog -Encoding utf8 -Append
+$allServices = (kubectl get svc -n $namespace -o json | ConvertFrom-Json).items.metadata.name
+foreach ($svc in $allServices) {
+    Write-Output "`n======================= Service: $svc =======================`n" | Out-File -FilePath $servicesInDetailLog -Encoding utf8 -Append
+    kubectl get svc $svc -n $namespace -o json | Out-File -FilePath $servicesInDetailLog -Encoding utf8 -Append
+}
+
+#============================================================================#
+
+Write-Host "Collecting HPC Pods information..." -ForegroundColor Yellow
 
 $allHpcPods = Get-AllHpcPods
 foreach ($pod in $allHpcPods) {
