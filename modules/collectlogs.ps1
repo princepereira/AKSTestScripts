@@ -151,12 +151,31 @@ function Get-RundownState {
         if (-not (Test-Path $kubeproxyLogsDir)) {
             New-Item -ItemType Directory -Path $kubeproxyLogsDir -Force
         }
-        Log-Message "Copying kubeproxy logs (C:\k\kubeproxy.err*)"
-        Copy-Item -Path "C:\k\kubeproxy.err*" -Destination $kubeproxyLogsDir -Force -ErrorAction Ignore
+        Log-Message "Copying kubeproxy logs (C:\k\kubeproxy.*)"
+        Copy-Item -Path "C:\k\kubeproxy.*" -Destination $kubeproxyLogsDir -Force -ErrorAction Ignore
+
+        # Get containerd logs
+        $containerdLogsDir = Join-Path $stateDir "containerdlogs"
+        if (-not (Test-Path $containerdLogsDir)) {
+            New-Item -ItemType Directory -Path $containerdLogsDir -Force
+        }
+        Log-Message "Copying containerd logs (C:\k\containerd.*)"
+        Copy-Item -Path "C:\k\containerd.*" -Destination $containerdLogsDir -Force -ErrorAction Ignore
 
         # Get CNI logs
-        Log-Message "Copying CNI logs (C:\k\azure-vnet.log)"
-        Copy-Item -Path "C:\k\azure-vnet.log" -Destination $stateDir -Force -ErrorAction Ignore
+        $cniLogsDir = Join-Path $stateDir "cnilogs"
+        if (-not (Test-Path $cniLogsDir)) {
+            New-Item -ItemType Directory -Path $cniLogsDir -Force
+        }
+        Log-Message "Copying CNI logs"
+        Copy-Item -Path "C:\k\azure-vnet.log" -Destination $cniLogsDir -Force -ErrorAction Ignore
+        Copy-Item -Path "C:\k\azure-vnet-telemetry.log" -Destination $cniLogsDir -Force -ErrorAction Ignore
+        Copy-Item -Path "C:\k\azurecni\netconf\10-azure.conflist" -Destination $cniLogsDir -Force -ErrorAction Ignore
+        Copy-Item -Path "C:\k\azurecns\*" -Destination $cniLogsDir -Force -ErrorAction Ignore
+
+        # Get windows node reset logs
+        Log-Message "Copying windows node reset logs (C:\k\windowsnodereset.log)"
+        Copy-Item -Path "C:\k\windowsnodereset.log" -Destination $stateDir -Force -ErrorAction Ignore
 
         # Get agentbaker logs
         $agentbakerLogsDir = Join-Path $stateDir "agentbakerlogs"
@@ -250,6 +269,8 @@ function Get-RundownState {
         Copy-Item -Path "C:\k\kubelet.err.log" -Destination $stateDir -Force -ErrorAction Ignore
         Log-Message "Copying kubelet logs (C:\k\kubelet.log)"
         Copy-Item -Path "C:\k\kubelet.log" -Destination $stateDir -Force -ErrorAction Ignore
+        Log-Message "Copying kubeclusterconfig.json (C:\k\kubeclusterconfig.json)"
+        Copy-Item -Path "C:\k\kubeclusterconfig.json" -Destination $stateDir -Force -ErrorAction Ignore
     } catch {
         Log-Message "Failed to collect rundown state. $_" -Color Red
     }
