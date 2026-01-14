@@ -1,3 +1,7 @@
+param(
+    [Parameter(Mandatory=$false)][bool]$IncludeInstallLogs = $false
+)
+
 function Log-Message {
     param(
         [Parameter(Mandatory=$true)][string] $Message,
@@ -57,7 +61,8 @@ function Get-RundownState {
     param (
         [Parameter (Mandatory = $true)]
         [String] $stateDir,
-        [switch] $VerboseState
+        [switch] $VerboseState,
+        [bool] $IncludeInstallLogs = $false
     )
     try {
         Log-Message "===== Get-RundownState operation started ======"
@@ -65,6 +70,25 @@ function Get-RundownState {
             New-Item -ItemType Directory -Path $stateDir
         }
 
+        if ($IncludeInstallLogs) {
+            # Collect installation logs
+            Log-Message "Collecting installation logs"
+            try {
+                Copy-Item -Path "C:\wcn\debug\archive\Install*" -Destination $stateDir -Recurse -Force -ErrorAction Ignore
+            } catch {
+                Log-Message "Failed to collect installation logs. $_" -Color Red
+            }
+            try {
+                Copy-Item -Path "C:\wcn\debug\archive\Upgrade*" -Destination $stateDir -Recurse -Force -ErrorAction Ignore
+            } catch {
+                Log-Message "Failed to collect upgrade logs. $_" -Color Red
+            }
+            try {
+                Copy-Item -Path "C:\wcn\debug\archive\wcndiag*" -Destination $stateDir -Recurse -Force -ErrorAction Ignore
+            } catch {
+                Log-Message "Failed to collect upgrade logs. $_" -Color Red
+            }
+        }
         # Get ebpf state
         $ebpfStateFile = Join-Path $stateDir "ebpf_state.txt"
         Execute-DiagnosticCommand -Command "netsh ebpf show programs" -OutFile $ebpfStateFile
@@ -288,7 +312,7 @@ foreach ($port in $ports) {
 	vfpctrl /port $port /list-rule >> .\vfprules.txt
 }
 
-Get-RundownState -stateDir . -VerboseState:$true
+Get-RundownState -stateDir . -VerboseState:$true -IncludeInstallLogs $IncludeInstallLogs
 
 #============================== EBPF =============================
 Set-Location ..

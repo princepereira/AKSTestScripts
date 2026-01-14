@@ -1,6 +1,6 @@
 param(
-    [Parameter(Mandatory=$true)]
-    [string]$DstPath
+    [Parameter(Mandatory=$true)][string]$DstPath,
+    [Parameter(Mandatory=$false)][switch]$IncludeInstallLogs
 )
 
 Import-Module -Force .\modules\constants.psm1
@@ -15,6 +15,7 @@ if (-Not (Test-Path -Path $FolderPath)) {
 }
 
 $podsAndServicesLog = Join-Path -Path $FolderPath -ChildPath "nodes-pods-services.txt"
+$allPodsAndServicesLog = Join-Path -Path $FolderPath -ChildPath "all-pods-services.txt"
 $servicesInDetailLog = Join-Path -Path $FolderPath -ChildPath "services-detail.txt"
 
 Remove-Item -Recurse -Force "$FolderPath\*" -ErrorAction SilentlyContinue
@@ -40,7 +41,10 @@ Write-Output "`n======================= PODS =======================`n" | Out-Fi
 kubectl get pods -n $namespace -o wide | Out-File -FilePath $podsAndServicesLog -Encoding utf8 -Append
 Write-Output "`n======================= SERVICES =======================`n" | Out-File -FilePath $podsAndServicesLog -Encoding utf8 -Append
 kubectl get svc -n $namespace -o wide | Out-File -FilePath $podsAndServicesLog -Encoding utf8 -Append
-
+Write-Output "`n======================= ALL PODS =======================`n" | Out-File -FilePath $podsAndServicesLog -Encoding utf8 -Append
+kubectl get pods -A -o wide | Out-File -FilePath $allPodsAndServicesLog -Encoding utf8 -Append
+Write-Output "`n======================= ALL SERVICES =======================`n" | Out-File -FilePath $podsAndServicesLog -Encoding utf8 -Append
+kubectl get svc -A -o wide | Out-File -FilePath $allPodsAndServicesLog -Encoding utf8 -Append
 Write-Output "`n======================= SERVICES IN DETAIL =======================`n" | Out-File -FilePath $servicesInDetailLog -Encoding utf8 -Append
 $allServices = (kubectl get svc -n $namespace -o json | ConvertFrom-Json).items.metadata.name
 foreach ($svc in $allServices) {
@@ -52,13 +56,15 @@ foreach ($svc in $allServices) {
 
 Write-Host "Collecting HPC Pods information..." -ForegroundColor Yellow
 
+
 $allHpcPods = Get-AllHpcPods
 foreach ($pod in $allHpcPods) {
     Write-Host "Collecting Windows Logs from Pod: $pod" -ForegroundColor Yellow
     Write-Host "Copying collect script to Pod: $pod" -ForegroundColor DarkYellow
     kubectl cp -n $namespace .\modules\collectlogs.ps1 $pod`:collectlogs.ps1
     Write-Host "Executing collect script in Pod: $pod" -ForegroundColor DarkYellow
-    kubectl exec -n $namespace $pod -- powershell -Command ".\collectlogs.ps1"
+    $includeLogsParam = if ($IncludeInstallLogs) { "-IncludeInstallLogs `$true" } else { "-IncludeInstallLogs `$false" }
+    kubectl exec -n $namespace $pod -- powershell -Command ".\collectlogs.ps1 $includeLogsParam"
     Write-Host "Copying logs.zip from Pod: $pod" -ForegroundColor DarkYellow
     kubectl cp -n $namespace $pod`:logs.zip "$pod.zip"
     move-item -Force "$pod.zip" "$FolderPath\$pod.zip"
