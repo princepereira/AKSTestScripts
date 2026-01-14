@@ -7,18 +7,18 @@ metadata:
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: hpc-ds-win
+  name: hpc-ds-annual
   namespace: demo
   labels:
-    app: hpc-ds-win
+    app: hpc-ds-annual
 spec:
   selector:
     matchLabels:
-      name: hpc-ds-win
+      name: hpc-ds-annual
   template:
     metadata:
       labels:
-        name: hpc-ds-win
+        name: hpc-ds-annual
     spec:
       securityContext:
         windowsOptions:
@@ -26,7 +26,7 @@ spec:
           runAsUserName: "NT AUTHORITY\\SYSTEM"
       hostNetwork: true
       containers:
-      - name: hpc-ds-win
+      - name: hpc-ds-annual
         image: mcr.microsoft.com/dotnet/framework/samples:aspnetapp
         command: ["powershell"]
         args: ["while($true)", "{ Sleep 5000 }"]

@@ -3,9 +3,12 @@ param(
     [string]$DstPath
 )
 
-$namespace = "demo"
-$hpcDaemonsSet = "hpc-ds-win"
-$RootDir = "C:\Users\ppereira\Logs\Bugs\Cilium\KubeProxyDualStackbehav"
+Import-Module -Force .\modules\constants.psm1
+
+$namespace = $Global:NAMESPACE
+$hpcDaemonsSet = $Global:HPC_NAME
+$RootDir = $Global:LOGS_ROOT_DIR
+
 $FolderPath = Join-Path -Path $RootDir -ChildPath $DstPath
 if (-Not (Test-Path -Path $FolderPath)) {
     New-Item -ItemType Directory -Path $FolderPath | Out-Null

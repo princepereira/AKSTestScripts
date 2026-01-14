@@ -7,3 +7,9 @@ $Global:NODE_PASSWORD="prince@123456123456"
 $Global:K8S_VERSION="1.32.7"
 $Global:NODE_POOL_NAME="npwin"
 $Global:NODE_COUNT="2"
+
+
+$Global:HPC_NAME="hpc-ds-win"
+$Global:NAMESPACE  ="demo"
+$Global:SERVER_POD_DEPLOYMENT="tcp-server"
+$Global:LOGS_ROOT_DIR="C:\Users\ppereira\Logs\Bugs\Cilium\KubeProxyDualStackbehav"

@@ -9,4 +9,5 @@ kubectl delete -f .\Yamls\Svc-Pref-DUAL-Local.yaml
 kubectl delete -f .\Yamls\Svc-Req-DUAL-Cluster.yaml
 kubectl delete -f .\Yamls\Svc-Req-DUAL-Local.yaml
 kubectl delete -f .\Yamls\hpc-ds-win22.yaml
+kubectl delete -f .\Yamls\hpc-ds-winannual.yaml
 Write-Host "Pods and Services deleted successfully." -ForegroundColor Green

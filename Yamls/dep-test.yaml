@@ -16,8 +16,9 @@ spec:
         app: tcp-server
     spec:
       nodeSelector:
-        "kubernetes.io/os": windows
+        # "kubernetes.io/os": windows
         # "kubernetes.azure.com/os-sku": WindowsAnnual
+        "kubernetes.azure.com/os-sku": Windows2022
       containers:
         - name: tcp-server
           image: mcr.microsoft.com/dotnet/framework/samples:aspnetapp

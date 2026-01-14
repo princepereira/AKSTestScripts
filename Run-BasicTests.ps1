@@ -1,6 +1,8 @@
-$namespace = "demo"
-$hpcDaemonsSet = "hpc-ds-win"
-$serverPodDeployment = "tcp-server"
+Import-Module -Force .\modules\constants.psm1
+
+$namespace = $Global:NAMESPACE
+$hpcDaemonsSet = $Global:HPC_NAME
+$serverPodDeployment = $Global:SERVER_POD_DEPLOYMENT
 $retry = 2
 $testLogsPath = ".\ConnectivityLogs.txt"
 
