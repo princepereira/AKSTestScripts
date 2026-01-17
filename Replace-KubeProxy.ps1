@@ -35,7 +35,11 @@ if ($replaceWithOriginal) {
 } else {
 
     Write-Host "Preparing kube-proxy package for deployment to HPC Pods" -ForegroundColor Yellow
-    rm -r -Force .\bins\kubeproxy.zip -ErrorAction SilentlyContinue
+    if ((Test-Path -Path "~\kube-proxy.exe")) {
+        Remove-Item -Path .\bins\kube-proxy.exe -Force -ErrorAction SilentlyContinue
+        Move-Item -Path "~\kube-proxy.exe" -Destination .\bins\kube-proxy.exe -Force
+    }
+    Remove-Item -Path .\bins\kubeproxy.zip -Force -ErrorAction SilentlyContinue
     $kubeProxyHash = (Get-FileHash -Path .\bins\kube-proxy.exe).Hash
     Compress-Archive .\bins\kube-proxy.exe .\bins\kubeproxy.zip -Force
 
