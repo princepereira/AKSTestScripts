@@ -8,7 +8,7 @@ if (-not (Test-Path -Path C:\k\kube-proxy_Orig.exe)) {
 Stop-Service -Force KubeProxy
 Start-Sleep -Seconds 2
 rm C:\k\kubeproxy.err.log -ErrorAction SilentlyContinue
-c:\k\sfpcopy.exe C:\kubeproxy\kube-proxy.exe C:\k\kube-proxy.exe
+c:\k\sfpcopy.exe .\kubeproxy\kube-proxy.exe C:\k\kube-proxy.exe
 Restart-Service -Force hns
 Start-Service KubeProxy
 Write-Host "kube-proxy deployment script completed." -ForegroundColor Green

@@ -68,6 +68,7 @@ foreach ($pod in $allHpcPods) {
     $podKubeProxyHash = kubectl exec -n $namespace $pod -- powershell -Command "(Get-FileHash -Path C:\k\kube-proxy.exe).Hash"
     if ($podKubeProxyHash -eq $kubeProxyHash) {
         Write-Host "kube-proxy.exe successfully updated in Pod: $pod" -ForegroundColor Green
+        Write-Host "All HPC Pods updated with new kube-proxy version." -ForegroundColor Magenta
     } else {
         Write-Host "ERROR: kube-proxy.exe update failed in Pod: $pod" -ForegroundColor Red
     }
@@ -75,7 +76,5 @@ foreach ($pod in $allHpcPods) {
     Write-Host "Actual hash: $kubeProxyHash" -ForegroundColor Green
     Write-Host "PodKubeProxy Hash: $podKubeProxyHash" -ForegroundColor Green
 }
-
-Write-Host "All HPC Pods updated with new kube-proxy version." -ForegroundColor Magenta
 
 kubectl get pods -n $namespace -o wide
