@@ -1,5 +1,6 @@
 param(
     [Parameter(Mandatory=$true)][string]$DstPath,
+    [Parameter(Mandatory=$false)][switch]$IsCiliumNode,
     [Parameter(Mandatory=$false)][switch]$IncludeInstallLogs
 )
 
@@ -41,9 +42,9 @@ Write-Output "`n======================= PODS =======================`n" | Out-Fi
 kubectl get pods -n $namespace -o wide | Out-File -FilePath $podsAndServicesLog -Encoding utf8 -Append
 Write-Output "`n======================= SERVICES =======================`n" | Out-File -FilePath $podsAndServicesLog -Encoding utf8 -Append
 kubectl get svc -n $namespace -o wide | Out-File -FilePath $podsAndServicesLog -Encoding utf8 -Append
-Write-Output "`n======================= ALL PODS =======================`n" | Out-File -FilePath $podsAndServicesLog -Encoding utf8 -Append
+Write-Output "`n======================= ALL PODS =======================`n" | Out-File -FilePath $allPodsAndServicesLog -Encoding utf8 -Append
 kubectl get pods -A -o wide | Out-File -FilePath $allPodsAndServicesLog -Encoding utf8 -Append
-Write-Output "`n======================= ALL SERVICES =======================`n" | Out-File -FilePath $podsAndServicesLog -Encoding utf8 -Append
+Write-Output "`n======================= ALL SERVICES =======================`n" | Out-File -FilePath $allPodsAndServicesLog -Encoding utf8 -Append
 kubectl get svc -A -o wide | Out-File -FilePath $allPodsAndServicesLog -Encoding utf8 -Append
 Write-Output "`n======================= SERVICES IN DETAIL =======================`n" | Out-File -FilePath $servicesInDetailLog -Encoding utf8 -Append
 $allServices = (kubectl get svc -n $namespace -o json | ConvertFrom-Json).items.metadata.name
@@ -64,12 +65,32 @@ foreach ($pod in $allHpcPods) {
     kubectl cp -n $namespace .\modules\collectlogs.ps1 $pod`:collectlogs.ps1
     Write-Host "Executing collect script in Pod: $pod" -ForegroundColor DarkYellow
     $includeLogsParam = if ($IncludeInstallLogs) { "-IncludeInstallLogs `$true" } else { "-IncludeInstallLogs `$false" }
-    kubectl exec -n $namespace $pod -- powershell -Command ".\collectlogs.ps1 $includeLogsParam"
+    $isCiliumNodeParam = if ($IsCiliumNode) { "-IsCiliumNode `$true" } else { "-IsCiliumNode `$false" }
+    kubectl exec -n $namespace $pod -- powershell -Command ".\collectlogs.ps1 $isCiliumNodeParam $includeLogsParam"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Failed to execute collect script in Pod: $pod" -ForegroundColor Red
+        continue
+    }
     Write-Host "Copying logs.zip from Pod: $pod" -ForegroundColor DarkYellow
-    kubectl cp -n $namespace $pod`:logs.zip "$pod.zip"
+    for ($i = 0; $i -lt 10; $i++) {
+        kubectl cp -n $namespace $pod`:logs.zip "$pod.zip"
+        if ($LASTEXITCODE -eq 0) {
+            break
+        }
+        Start-Sleep -Seconds 2
+        Write-Host "Retrying copy of logs.zip from Pod: $pod (Attempt $($i + 1))" -ForegroundColor DarkYellow
+    }
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Failed to copy logs.zip from Pod: $pod" -ForegroundColor Red
+        continue
+    }
     move-item -Force "$pod.zip" "$FolderPath\$pod.zip"
     Write-Host "Finished collecting logs from Pod: $pod" -ForegroundColor Green
-    Expand-Archive -Path "$FolderPath\$pod.zip" -DestinationPath "$FolderPath\$pod" -Force
+    try {
+        Expand-Archive -Path "$FolderPath\$pod.zip" -DestinationPath "$FolderPath\$pod" -Force -ErrorAction Stop
+    } catch {
+        Write-Host "Failed to expand archive for Pod: $pod - $_" -ForegroundColor Red
+    }
 }
 
 Write-Host "All logs collected and stored in folder: $FolderPath" -ForegroundColor Magenta

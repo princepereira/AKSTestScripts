@@ -1,4 +1,5 @@
 param(
+    [Parameter(Mandatory=$false)][bool]$IsCiliumNode = $false,
     [Parameter(Mandatory=$false)][bool]$IncludeInstallLogs = $false
 )
 
@@ -62,6 +63,7 @@ function Get-RundownState {
         [Parameter (Mandatory = $true)]
         [String] $stateDir,
         [switch] $VerboseState,
+        [bool] $IsCiliumNode = $false,
         [bool] $IncludeInstallLogs = $false
     )
     try {
@@ -70,105 +72,110 @@ function Get-RundownState {
             New-Item -ItemType Directory -Path $stateDir
         }
 
-        if ($IncludeInstallLogs) {
-            # Collect installation logs
-            Log-Message "Collecting installation logs"
-            try {
-                Copy-Item -Path "C:\wcn\debug\archive\Install*" -Destination $stateDir -Recurse -Force -ErrorAction Ignore
-            } catch {
-                Log-Message "Failed to collect installation logs. $_" -Color Red
-            }
-            try {
-                Copy-Item -Path "C:\wcn\debug\archive\Upgrade*" -Destination $stateDir -Recurse -Force -ErrorAction Ignore
-            } catch {
-                Log-Message "Failed to collect upgrade logs. $_" -Color Red
-            }
-            try {
-                Copy-Item -Path "C:\wcn\debug\archive\wcndiag*" -Destination $stateDir -Recurse -Force -ErrorAction Ignore
-            } catch {
-                Log-Message "Failed to collect upgrade logs. $_" -Color Red
-            }
-        }
-        # Get ebpf state
-        $ebpfStateFile = Join-Path $stateDir "ebpf_state.txt"
-        Execute-DiagnosticCommand -Command "netsh ebpf show programs" -OutFile $ebpfStateFile
-        Execute-DiagnosticCommand -Command "netsh ebpf show pins" -OutFile $ebpfStateFile
-
-        # eBPF map state
-        Log-Message "Obtaining eBPF map state"
-        $ebpfMapsDir = Join-Path $stateDir "ebpf_maps"
-        if (-not (Test-Path $ebpfMapsDir)) {
-            New-Item -ItemType Directory -Path $ebpfMapsDir
-        }
-        try {
-            # List base map entries
-            $mapNames = @(
-                "node_config",
-                "node_devices",
-                "observability_config",
-                "endpoints",
-                "ipcache",
-                "lb",
-                "lb_affinity",
-                "lb_backend",
-                "lb_revnat",
-                "masquerade",
-                "neighbor",
-                "nodeport_neighbor"
-            )
-            if ($VerboseState) {
-                $mapNames += @(
-                    "connection_tracker",
-                    "snat"
-                )
-            }
-            foreach ($name in $mapNames) {
-                $mapFile = Join-Path $ebpfMapsDir "$name.txt"
-                Log-Message "    cnc_cli.exe --state map=$name out=$mapFile"
-                $result = (& cnc_cli.exe --state map=$name out=$mapFile)
-            }
-        } catch {
-            Log-Message "Failed to collect eBPF map state. $_" -Color Red
-        }
-
-        # Cilium metrics
-        try {
-            $ciliumMetricsFile = Join-Path $stateDir "cilium_metrics.txt"
-            cnc_cli.exe --metrics metrics-agg=cpu out=$ciliumMetricsFile
-        } catch {
-            Log-Message "Failed to collect Cilium metrics. $_" -Color Red
-        }
-
         # Get HNS state
         $hnsDiagFile = Join-Path $stateDir "hnsdiag.txt"
         Execute-DiagnosticCommand -Command "hnsdiag.exe list all -dfl" -OutFile $hnsDiagFile
 
-        # Create WCN debug directory for wcnagent snapshot and metrics
-        $wcnDebugDir = Join-Path $stateDir "wcn_debug"
-        if (-not (Test-Path $wcnDebugDir)) {
-            New-Item -ItemType Directory -Path $wcnDebugDir
+        if ($IsCiliumNode) {
+            if ($IncludeInstallLogs) {
+                # Collect installation logs
+                Log-Message "Collecting installation logs"
+                try {
+                    Copy-Item -Path "C:\wcn\debug\archive\Install*" -Destination $stateDir -Recurse -Force -ErrorAction Ignore
+                } catch {
+                    Log-Message "Failed to collect installation logs. $_" -Color Red
+                }
+                try {
+                    Copy-Item -Path "C:\wcn\debug\archive\Upgrade*" -Destination $stateDir -Recurse -Force -ErrorAction Ignore
+                } catch {
+                    Log-Message "Failed to collect upgrade logs. $_" -Color Red
+                }
+                try {
+                    Copy-Item -Path "C:\wcn\debug\archive\wcndiag*" -Destination $stateDir -Recurse -Force -ErrorAction Ignore
+                } catch {
+                    Log-Message "Failed to collect upgrade logs. $_" -Color Red
+                }
+            }
+            # Get ebpf state
+            $ebpfStateFile = Join-Path $stateDir "ebpf_state.txt"
+            Execute-DiagnosticCommand -Command "netsh ebpf show programs" -OutFile $ebpfStateFile
+            Execute-DiagnosticCommand -Command "netsh ebpf show pins" -OutFile $ebpfStateFile
+
+            # eBPF map state
+            Log-Message "Obtaining eBPF map state"
+            $ebpfMapsDir = Join-Path $stateDir "ebpf_maps"
+            if (-not (Test-Path $ebpfMapsDir)) {
+                New-Item -ItemType Directory -Path $ebpfMapsDir
+            }
+
+            try {
+
+                # List base map entries
+                $mapNames = @(
+                    "node_config",
+                    "node_devices",
+                    "observability_config",
+                    "endpoints",
+                    "ipcache",
+                    "lb",
+                    "lb_affinity",
+                    "lb_backend",
+                    "lb_revnat",
+                    "masquerade",
+                    "neighbor",
+                    "nodeport_neighbor"
+                )
+                if ($VerboseState) {
+                    $mapNames += @(
+                        "connection_tracker",
+                        "snat"
+                    )
+                }
+                foreach ($name in $mapNames) {
+                    $mapFile = Join-Path $ebpfMapsDir "$name.txt"
+                    Log-Message "    cnc_cli.exe --state map=$name out=$mapFile"
+                    $result = (& cnc_cli.exe --state map=$name out=$mapFile)
+                }
+            } catch {
+                Log-Message "Failed to collect eBPF map state. $_" -Color Red
+            }
+
+            # Cilium metrics
+            try {
+                $ciliumMetricsFile = Join-Path $stateDir "cilium_metrics.txt"
+                cnc_cli.exe --metrics metrics-agg=cpu out=$ciliumMetricsFile
+            } catch {
+                Log-Message "Failed to collect Cilium metrics. $_" -Color Red
+            }
+
+            # Create WCN debug directory for wcnagent snapshot and metrics
+            $wcnDebugDir = Join-Path $stateDir "wcn_debug"
+            if (-not (Test-Path $wcnDebugDir)) {
+                New-Item -ItemType Directory -Path $wcnDebugDir
+            }
+
+            # Get WCN state - split into separate components
+            $wcnStateLoadBalancerFile = Join-Path $wcnDebugDir "wcncli_state_loadbalancer.txt"
+            Execute-DiagnosticCommand -Command "wcncli.exe --module wcn state loadbalancer" -OutFile $wcnStateLoadBalancerFile
+
+            $wcnStateEndpointFile = Join-Path $wcnDebugDir "wcncli_state_endpoint.txt"
+            Execute-DiagnosticCommand -Command "wcncli.exe --module wcn state endpoint" -OutFile $wcnStateEndpointFile
+
+            $wcnStateNetworkFile = Join-Path $wcnDebugDir "wcncli_state_network.txt"
+            Execute-DiagnosticCommand -Command "wcncli.exe --module wcn state network" -OutFile $wcnStateNetworkFile
+
+            $wcnStateNamespaceFile = Join-Path $wcnDebugDir "wcncli_state_namespace.txt"
+            Execute-DiagnosticCommand -Command "wcncli.exe --module wcn state namespace" -OutFile $wcnStateNamespaceFile
+
+            # Get WCN metrics
+            $wcnMetricsFile = Join-Path $wcnDebugDir "wcncli_metrics.txt"
+            Execute-DiagnosticCommand -Command "wcncli.exe --module wcn metrics" -OutFile $wcnMetricsFile
+
+            # Get WCN service-info
+            $wcnServiceInfoFile = Join-Path $wcnDebugDir "wcncli_service_info.txt"
+            Execute-DiagnosticCommand -Command "wcncli.exe --module wcn service-info" -OutFile $wcnServiceInfoFile
+
         }
-
-        # Get WCN state - split into separate components
-        $wcnStateLoadBalancerFile = Join-Path $wcnDebugDir "wcncli_state_loadbalancer.txt"
-        Execute-DiagnosticCommand -Command "wcncli.exe --module wcn state loadbalancer" -OutFile $wcnStateLoadBalancerFile
-
-        $wcnStateEndpointFile = Join-Path $wcnDebugDir "wcncli_state_endpoint.txt"
-        Execute-DiagnosticCommand -Command "wcncli.exe --module wcn state endpoint" -OutFile $wcnStateEndpointFile
-
-        $wcnStateNetworkFile = Join-Path $wcnDebugDir "wcncli_state_network.txt"
-        Execute-DiagnosticCommand -Command "wcncli.exe --module wcn state network" -OutFile $wcnStateNetworkFile
-
-        $wcnStateNamespaceFile = Join-Path $wcnDebugDir "wcncli_state_namespace.txt"
-        Execute-DiagnosticCommand -Command "wcncli.exe --module wcn state namespace" -OutFile $wcnStateNamespaceFile
-
-        # Get WCN metrics
-        $wcnMetricsFile = Join-Path $wcnDebugDir "wcncli_metrics.txt"
-        Execute-DiagnosticCommand -Command "wcncli.exe --module wcn metrics" -OutFile $wcnMetricsFile
-
-        # Get WCN service-info
-        $wcnServiceInfoFile = Join-Path $wcnDebugDir "wcncli_service_info.txt"
-        Execute-DiagnosticCommand -Command "wcncli.exe --module wcn service-info" -OutFile $wcnServiceInfoFile
 
         # Get kubeproxy logs
         $kubeproxyLogsDir = Join-Path $stateDir "kubeproxylogs"
@@ -312,7 +319,7 @@ foreach ($port in $ports) {
 	vfpctrl /port $port /list-rule >> .\vfprules.txt
 }
 
-Get-RundownState -stateDir . -VerboseState:$true -IncludeInstallLogs $IncludeInstallLogs
+Get-RundownState -stateDir . -VerboseState:$true -IsCiliumNode $IsCiliumNode -IncludeInstallLogs $IncludeInstallLogs
 
 #============================== EBPF =============================
 Set-Location ..
