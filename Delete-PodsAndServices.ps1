@@ -1,3 +1,7 @@
+Import-Module -Force .\modules\constants.psm1
+
+$namespace = $Global:NAMESPACE
+
 Write-Host "Deleting Pods and Services..." -ForegroundColor Cyan
 kubectl delete -f .\Yamls\Dep-Test.yaml
 kubectl delete -f .\Yamls\Svc-IPV4-Cluster.yaml
@@ -9,5 +13,6 @@ kubectl delete -f .\Yamls\Svc-Pref-DUAL-Local.yaml
 kubectl delete -f .\Yamls\Svc-Req-DUAL-Cluster.yaml
 kubectl delete -f .\Yamls\Svc-Req-DUAL-Local.yaml
 kubectl delete -f .\Yamls\hpc-ds-win22.yaml
-kubectl delete -f .\Yamls\hpc-ds-winannual.yaml
+# kubectl delete -f .\Yamls\hpc-ds-winannual.yaml
+kubectl delete namespace $namespace
 Write-Host "Pods and Services deleted successfully." -ForegroundColor Green
