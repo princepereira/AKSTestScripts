@@ -2,8 +2,8 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: tcp-server
-  name: tcp-server-ipv4-local
+    app: httpserver
+  name: httpserver-ipv4-local
   namespace: demo
 spec:
   externalTrafficPolicy: Local
@@ -11,7 +11,7 @@ spec:
   - IPv4
   ipFamilyPolicy: SingleStack
   selector:
-    app: tcp-server
+    app: httpserver
   sessionAffinity: None
   type: LoadBalancer
   ports:

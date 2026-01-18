@@ -1,26 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: tcp-server
+  name: httpserver
   namespace: demo
   labels:
-    app: tcp-server
+    app: httpserver
 spec:
   replicas: 6
   selector:
     matchLabels:
-      app: tcp-server
+      app: httpserver
   template:
     metadata:
       labels:
-        app: tcp-server
+        app: httpserver
     spec:
       nodeSelector:
         # "kubernetes.io/os": windows
         # "kubernetes.azure.com/os-sku": WindowsAnnual
         "kubernetes.azure.com/os-sku": Windows2022
       containers:
-        - name: tcp-server
+        - name: httpserver
           image: mcr.microsoft.com/dotnet/framework/samples:aspnetapp
           ports:
             - containerPort: 80

@@ -2,8 +2,8 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: tcp-server
-  name: tcp-server-prefer-dual-cluster
+    app: httpserver
+  name: httpserver-prefer-dual-cluster
   namespace: demo
 spec:
   ipFamilies:
@@ -11,7 +11,7 @@ spec:
   - IPv6
   ipFamilyPolicy: PreferDualStack
   selector:
-    app: tcp-server
+    app: httpserver
   sessionAffinity: None
   type: LoadBalancer
   ports:
