@@ -33,5 +33,5 @@ spec:
         hostPath:
           path: C:\k
       nodeSelector:
-        kubernetes.azure.com/os: Windows
-        # kubernetes.azure.com/os-sku: WindowsAnnual
+        # kubernetes.azure.com/os: Windows
+        kubernetes.azure.com/os-sku: WindowsAnnual

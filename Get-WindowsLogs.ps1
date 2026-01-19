@@ -75,6 +75,7 @@ foreach ($pod in $allHpcPods) {
     for ($i = 0; $i -lt 10; $i++) {
         kubectl cp -n $namespace $pod`:logs.zip "$pod.zip"
         if ($LASTEXITCODE -eq 0) {
+            Write-Host "Successfully copied logs.zip from Pod: $pod" -ForegroundColor Green
             break
         }
         Start-Sleep -Seconds 2
