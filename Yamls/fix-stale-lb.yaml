@@ -102,7 +102,7 @@ data:
                         Write-Host "Missing DIP ranges:" -ForegroundColor Red
                         $missingDIPs | ForEach-Object { Write-Host " - $_" }
                         Write-Host "Deleting rule : ruleId: $ruleId, port: $port, group: $group" -ForegroundColor Yellow
-                        # vfpctrl /remove-rule /port $port /layer LB_DSR /group $group /rule $ruleId
+                        vfpctrl /remove-rule /port $port /layer LB_DSR /group $group /rule $ruleId
                     }
                 }
             }
