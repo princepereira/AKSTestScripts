@@ -6,8 +6,9 @@ $Global:NODE_USER_NAME="prince"
 $Global:NODE_PASSWORD="prince@123456123456"
 $Global:K8S_VERSION="1.32.7"
 $Global:NODE_POOL_NAME="npwin"
+$Global:OS_SKU="WindowsAnnual"
 $Global:NODE_COUNT="2"
-
+$Global:NODE_VM_SIZE="Standard_E8-2as_v5" # Standard_D4s_v5
 
 $Global:HPC_NAME="hpc-ds-win"
 $Global:NAMESPACE  ="demo"
