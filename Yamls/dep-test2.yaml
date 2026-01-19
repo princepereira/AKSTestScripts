@@ -16,7 +16,7 @@ spec:
         app: test2
     spec:
       nodeSelector:
-        "kubernetes.io/os": windows
+        kubernetes.azure.com/os-sku: Windows2022
       containers:
         - name: test2
           image: mcr.microsoft.com/dotnet/framework/samples:aspnetapp

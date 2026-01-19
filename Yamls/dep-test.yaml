@@ -6,7 +6,7 @@ metadata:
   labels:
     app: httpserver
 spec:
-  replicas: 8
+  replicas: 1
   selector:
     matchLabels:
       app: httpserver
@@ -16,9 +16,7 @@ spec:
         app: httpserver
     spec:
       nodeSelector:
-        # "kubernetes.io/os": windows
-        "kubernetes.azure.com/os-sku": WindowsAnnual
-        # "kubernetes.azure.com/os-sku": Windows2022
+        kubernetes.azure.com/os-sku: OS_SKU
       containers:
         - name: httpserver
           image: mcr.microsoft.com/dotnet/framework/samples:aspnetapp
