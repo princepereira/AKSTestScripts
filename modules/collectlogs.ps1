@@ -179,11 +179,13 @@ function Get-RundownState {
 
         # Get kubeproxy logs
         $kubeproxyLogsDir = Join-Path $stateDir "kubeproxylogs"
+        $kubeProxyMetricsFile = Join-Path $kubeproxyLogsDir "metrics.txt"
         if (-not (Test-Path $kubeproxyLogsDir)) {
             New-Item -ItemType Directory -Path $kubeproxyLogsDir -Force
         }
         Log-Message "Copying kubeproxy logs (C:\k\kubeproxy.*)"
         Copy-Item -Path "C:\k\kubeproxy.*" -Destination $kubeproxyLogsDir -Force -ErrorAction Ignore
+        Execute-DiagnosticCommand -Command "(curl http://127.0.0.1:10249/metrics -UseBasicParsing).RawContent" -OutFile $kubeProxyMetricsFile
 
         # Get containerd logs
         $containerdLogsDir = Join-Path $stateDir "containerdlogs"

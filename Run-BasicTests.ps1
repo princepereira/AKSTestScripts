@@ -1,3 +1,7 @@
+param(
+    [Parameter(Mandatory=$false)][switch]$RunPolicyValidationOnly
+)
+
 Import-Module -Force .\modules\constants.psm1
 
 $namespace = $Global:NAMESPACE
@@ -10,6 +14,13 @@ $RunClusterIPTests = $true
 $RunNodePortTests = $true
 $RunLoadBalancerTests = $true
 $RunPolicyValidation = $true
+
+if ($RunPolicyValidationOnly) {
+    $RunClusterIPTests = $false
+    $RunNodePortTests = $false
+    $RunLoadBalancerTests = $false
+    $RunPolicyValidation = $true
+}
 
 $SvcTypeClusterIP = "CLUSTER-IP"
 $SvcTypeNodePort = "NODE-PORT"
