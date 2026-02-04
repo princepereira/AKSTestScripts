@@ -57,6 +57,8 @@ foreach ($svc in $allServices) {
 
 Write-Host "Collecting HPC Pods information..." -ForegroundColor Yellow
 
+$includeLogsParam = if ($IncludeInstallLogs) { "-IncludeInstallLogs `$true" } else { "-IncludeInstallLogs `$false" }
+$isCiliumNodeParam = if ($IsCiliumNode) { "-IsCiliumNode `$true" } else { "-IsCiliumNode `$false" }
 
 $allHpcPods = Get-AllHpcPods
 foreach ($pod in $allHpcPods) {
@@ -64,8 +66,6 @@ foreach ($pod in $allHpcPods) {
     Write-Host "Copying collect script to Pod: $pod" -ForegroundColor DarkYellow
     kubectl cp -n $namespace .\modules\collectlogs.ps1 $pod`:collectlogs.ps1
     Write-Host "Executing collect script in Pod: $pod" -ForegroundColor DarkYellow
-    $includeLogsParam = if ($IncludeInstallLogs) { "-IncludeInstallLogs `$true" } else { "-IncludeInstallLogs `$false" }
-    $isCiliumNodeParam = if ($IsCiliumNode) { "-IsCiliumNode `$true" } else { "-IsCiliumNode `$false" }
     kubectl exec -n $namespace $pod -- powershell -Command ".\collectlogs.ps1 $isCiliumNodeParam $includeLogsParam"
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Failed to execute collect script in Pod: $pod" -ForegroundColor Red
@@ -92,6 +92,10 @@ foreach ($pod in $allHpcPods) {
     } catch {
         Write-Host "Failed to expand archive for Pod: $pod - $_" -ForegroundColor Red
     }
+}
+
+if (($IsCiliumNode) -and ($IncludeInstallLogs)) {
+    .\Convert-WcnDiagLogs.ps1 -LogsPath $FolderPath
 }
 
 Write-Host "All logs collected and stored in folder: $FolderPath" -ForegroundColor Magenta
