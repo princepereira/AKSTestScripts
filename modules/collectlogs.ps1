@@ -95,6 +95,14 @@ function Get-RundownState {
                 } catch {
                     Log-Message "Failed to collect upgrade logs. $_" -Color Red
                 }
+                try {
+                    netsh trace Stop
+                    Copy-Item -Recurse -Path c:\k\traces -Destination c:\k\traces_bkp
+                    Compress-Archive c:\k\traces_bkp\* c:\k\traces.zip
+                    Copy-Item -Path "C:\k\traces.zip" -Destination $stateDir -Recurse -Force -ErrorAction Ignore
+                } catch {
+                    Log-Message "Failed to collect trace logs. $_" -Color Red
+                }
             }
             # Get ebpf state
             $ebpfStateFile = Join-Path $stateDir "ebpf_state.txt"

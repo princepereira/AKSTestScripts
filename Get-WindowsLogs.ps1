@@ -57,6 +57,8 @@ foreach ($svc in $allServices) {
 
 Write-Host "Collecting HPC Pods information..." -ForegroundColor Yellow
 
+kubectl delete -f .\Yamls\start-capture.yaml
+
 $includeLogsParam = if ($IncludeInstallLogs) { "-IncludeInstallLogs `$true" } else { "-IncludeInstallLogs `$false" }
 $isCiliumNodeParam = if ($IsCiliumNode) { "-IsCiliumNode `$true" } else { "-IsCiliumNode `$false" }
 

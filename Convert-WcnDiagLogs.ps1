@@ -115,6 +115,70 @@ foreach ($wcndiagZip in $wcndiagZips) {
     }
 }
 
+
+# Find all wcndiag*.zip files recursively
+$wcndiagZips = Get-ChildItem -Path $LogsPath -Filter "traces.zip" -Recurse -File
+Write-Host "Found $($wcndiagZips.Count) traces.zip files" -ForegroundColor Yellow
+
+foreach ($wcndiagZip in $wcndiagZips) {
+    Write-Host "`nProcessing: $($wcndiagZip.FullName)" -ForegroundColor Cyan
+    
+    # Get parent folder name (pod name) for unique naming
+    $podFolder = $wcndiagZip.Directory.Name
+    $wcndiagName = [System.IO.Path]::GetFileNameWithoutExtension($wcndiagZip.Name)
+    
+    # Create extraction folder for traces.zip
+    $extractPath = Join-Path -Path $wcndiagZip.DirectoryName -ChildPath $wcndiagName
+    
+    try {
+        # Step 1: Expand traces.zip
+        Write-Host "  Expanding traces.zip..." -ForegroundColor DarkYellow
+        Expand-Archive -Path $wcndiagZip.FullName -DestinationPath $extractPath -Force -ErrorAction Stop
+        
+        
+        # Step 3: Find wcn_trace.etl
+        $etlFiles = Get-ChildItem -Path $extractPath -Filter "trace*.etl" -Recurse -File
+
+        foreach ($etlFile in $etlFiles) {
+            Write-Host "  Found trace ETL file: $($etlFile.FullName)" -ForegroundColor DarkYellow
+            
+            # Step 4: Convert ETL file using netsh trace convert
+            Write-Host "  Converting ETL file..." -ForegroundColor DarkYellow
+            $originalLocation = Get-Location
+            Set-Location -Path $etlFile.DirectoryName
+            
+            $convertResult = netsh trace convert $etlFile.Name 2>&1
+            
+            Set-Location -Path $originalLocation
+            
+            # Check for converted file (usually creates .txt or .csv file)
+            $convertedFiles = Get-ChildItem -Path $etlFile.DirectoryName -Include "*.txt" -Recurse -File -ErrorAction SilentlyContinue
+            
+            if ($convertedFiles.Count -eq 0) {
+                Write-Host "  Warning: No converted file found. Netsh output: $convertResult" -ForegroundColor Yellow
+                # Still copy the ETL file itself
+                $convertedFiles = @($etlFile)
+            }
+            
+            # Step 5: Copy converted files to output folder organized by pod name
+            $podOutputPath = Join-Path -Path $outputPath -ChildPath $podFolder
+            if (-Not (Test-Path -Path $podOutputPath)) {
+                New-Item -ItemType Directory -Path $podOutputPath | Out-Null
+            }
+            
+            foreach ($convertedFile in $convertedFiles) {
+                # Use simple name: traces<timestamp>.txt
+                $extension = $convertedFile.Extension
+                Copy-Item -Path $convertedFile.FullName -Destination $podOutputPath -Force
+                Write-Host "  Copied to: $podOutputPath" -ForegroundColor Green
+            }
+        }
+        
+    } catch {
+        Write-Host "  Error processing $($wcndiagZip.Name): $_" -ForegroundColor Red
+    }
+}
+
 Write-Host "`n========================================" -ForegroundColor Magenta
 Write-Host "All converted ETL files are in: $outputPath" -ForegroundColor Magenta
 Write-Host "========================================" -ForegroundColor Magenta
