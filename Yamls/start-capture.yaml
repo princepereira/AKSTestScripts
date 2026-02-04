@@ -15,12 +15,16 @@ data:
 
     mkdir -Force "c:\k\traces\"
 
-    While($true){
+    $restartTime = (Get-Date -Format "MMdd_HHmmss")
 
+    Write-Output "Restart time : $restartTime" > "c:\k\traces\restart-at-$restartTime.txt"
+
+    While($true){
+      
+      $fileName = "c:\k\traces\trace" +  (Get-Date -Format "MMdd_HHmmss") + ".etl"
+      
       Write-Host "Stopping capture" -ForegroundColor Yellow
       netsh trace stop
-
-      $fileName = "c:\k\traces\trace" +  (Get-Date -Format "MMdd_HHmm") + ".etl"
 
       Write-Host "Starting new capture  for 10 minutes and store it to file: $fileName" -ForegroundColor Green
 
