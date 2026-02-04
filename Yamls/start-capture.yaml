@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: demo
+  namespace: demo
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: start-capture-configmap
+  namespace: demo
+
+data:
+  start-capture.ps1: |
+
+    mkdir -Force "c:\k\traces\"
+
+    While($true){
+
+      Write-Host "Stopping capture" -ForegroundColor Yellow
+      netsh trace stop
+
+      $fileName = "c:\k\traces\trace" +  (Get-Date -Format "MMdd_HHmm") + ".etl"
+
+      Write-Host "Starting new capture  for 5 minutes and store it to file: $fileName" -ForegroundColor Green
+
+      netsh trace start provider="{425f4e76-8d2d-506f-57d6-ab466512e14b}" level=6 provider="{6ff0db31-e888-5328-7cb4-33b76702e6e8}" level=6  provider="{0C885E0D-6EB6-476C-A048-2457EED3A5C1}" level=6 provider="{2F07E2EE-15DB-40F1-90EF-9D7BA282188A}" level=6 tracefile=$fileName report=di persistent=yes ov=yes maxSize=1024
+
+      Start-Sleep -Seconds 300
+
+    }
+
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: start-capture
+  namespace: demo
+  labels:
+    app: start-capture
+spec:
+  selector:
+    matchLabels:
+      app: start-capture
+  template:
+    metadata:
+      labels:
+        app: start-capture
+    spec:
+      securityContext:
+        windowsOptions:
+          hostProcess: true
+          runAsUserName: 'NT AUTHORITY\SYSTEM'
+      hostNetwork: true
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/os
+                operator: In
+                values:
+                - windows
+      containers:
+      - name: start-capture
+        image: mcr.microsoft.com/dotnet/framework/samples:aspnetapp
+        imagePullPolicy: IfNotPresent
+        command:
+          - powershell.exe
+          - -File
+          - C:\scripts\start-capture.ps1
+        volumeMounts:
+          - name: script
+            mountPath: C:\scripts
+          - name: kube-path
+            mountPath: C:\k
+      terminationGracePeriodSeconds: 60
+      volumes:
+        - name: script
+          configMap:
+            name: start-capture-configmap
+        - name: kube-path
+          hostPath:
+            path: C:\k
+            type: DirectoryOrCreate
