@@ -22,11 +22,11 @@ data:
 
       $fileName = "c:\k\traces\trace" +  (Get-Date -Format "MMdd_HHmm") + ".etl"
 
-      Write-Host "Starting new capture  for 5 minutes and store it to file: $fileName" -ForegroundColor Green
+      Write-Host "Starting new capture  for 10 minutes and store it to file: $fileName" -ForegroundColor Green
 
       netsh trace start provider="{425f4e76-8d2d-506f-57d6-ab466512e14b}" level=6 provider="{6ff0db31-e888-5328-7cb4-33b76702e6e8}" level=6  provider="{0C885E0D-6EB6-476C-A048-2457EED3A5C1}" level=6 provider="{2F07E2EE-15DB-40F1-90EF-9D7BA282188A}" level=6 tracefile=$fileName report=di persistent=yes ov=yes maxSize=1024
 
-      Start-Sleep -Seconds 300
+      Start-Sleep -Seconds 600
 
     }
 
