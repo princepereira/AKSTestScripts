@@ -1,0 +1,153 @@
+apiVersion: kwok.x-k8s.io/v1alpha1
+kind: Stage
+metadata:
+  name: node-initialize
+spec:
+  resourceRef:
+    apiGroup: v1
+    kind: Node
+  selector:
+    matchExpressions:
+    - key: '.status.conditions.[] | select( .type == "Ready" ) | .status'
+      operator: 'NotIn'
+      values:
+      - 'True'
+  next:
+    statusTemplate: |
+      {{ $now := Now }}
+      conditions:
+      - lastHeartbeatTime: {{ $now | Quote }}
+        lastTransitionTime: {{ $now | Quote }}
+        message: kubelet is posting ready status
+        reason: KubeletReady
+        status: "True"
+        type: Ready
+      - lastHeartbeatTime: {{ $now | Quote }}
+        lastTransitionTime: {{ $now | Quote }}
+        message: kubelet has sufficient memory available
+        reason: KubeletHasSufficientMemory
+        status: "False"
+        type: MemoryPressure
+      - lastHeartbeatTime: {{ $now | Quote }}
+        lastTransitionTime: {{ $now | Quote }}
+        message: kubelet has no disk pressure
+        reason: KubeletHasNoDiskPressure
+        status: "False"
+        type: DiskPressure
+      - lastHeartbeatTime: {{ $now | Quote }}
+        lastTransitionTime: {{ $now | Quote }}
+        message: kubelet has sufficient PID available
+        reason: KubeletHasSufficientPID
+        status: "False"
+        type: PIDPressure
+      - lastHeartbeatTime: {{ $now | Quote }}
+        lastTransitionTime: {{ $now | Quote }}
+        message: RouteController created a route
+        reason: RouteCreated
+        status: "False"
+        type: NetworkUnavailable
+      addresses:
+      {{ with .spec.podCIDR }}
+      - address: {{ . | Quote }}
+        type: PodCIDR
+      {{ end }}
+      {{ with .metadata.labels }}
+      {{ with index . "type" }}
+      - address: {{ . | Quote }}
+        type: InternalIP
+      {{ end }}
+      {{ end }}
+---
+apiVersion: kwok.x-k8s.io/v1alpha1
+kind: Stage
+metadata:
+  name: node-heartbeat
+spec:
+  resourceRef:
+    apiGroup: v1
+    kind: Node
+  selector:
+    matchExpressions:
+    - key: '.status.conditions.[] | select( .type == "Ready" ) | .status'
+      operator: 'In'
+      values:
+      - 'True'
+  delay:
+    durationMilliseconds: 20000
+    jitterDurationMilliseconds: 5000
+  next:
+    statusTemplate: |
+      {{ $now := Now }}
+      conditions:
+      - lastHeartbeatTime: {{ $now | Quote }}
+        type: Ready
+      - lastHeartbeatTime: {{ $now | Quote }}
+        type: MemoryPressure
+      - lastHeartbeatTime: {{ $now | Quote }}
+        type: DiskPressure
+      - lastHeartbeatTime: {{ $now | Quote }}
+        type: PIDPressure
+---
+apiVersion: kwok.x-k8s.io/v1alpha1
+kind: Stage
+metadata:
+  name: pod-ready
+spec:
+  resourceRef:
+    apiGroup: v1
+    kind: Pod
+  selector:
+    matchExpressions:
+    - key: '.metadata.deletionTimestamp'
+      operator: 'DoesNotExist'
+    - key: '.status.podIP'
+      operator: 'DoesNotExist'
+  next:
+    statusTemplate: |
+      {{ $now := Now }}
+      {{ $podIP := PodIP }}
+      conditions:
+      - lastTransitionTime: {{ $now | Quote }}
+        status: "True"
+        type: Initialized
+      - lastTransitionTime: {{ $now | Quote }}
+        status: "True"
+        type: Ready
+      - lastTransitionTime: {{ $now | Quote }}
+        status: "True"
+        type: ContainersReady
+      - lastTransitionTime: {{ $now | Quote }}
+        status: "True"
+        type: PodScheduled
+      containerStatuses:
+      {{ range .spec.containers }}
+      - image: {{ .image | Quote }}
+        name: {{ .name | Quote }}
+        ready: true
+        restartCount: 0
+        started: true
+        state:
+          running:
+            startedAt: {{ $now | Quote }}
+      {{ end }}
+      hostIP: {{ $podIP | Quote }}
+      phase: Running
+      podIP: {{ $podIP | Quote }}
+      startTime: {{ $now | Quote }}
+---
+apiVersion: kwok.x-k8s.io/v1alpha1
+kind: Stage
+metadata:
+  name: pod-complete
+spec:
+  resourceRef:
+    apiGroup: v1
+    kind: Pod
+  selector:
+    matchExpressions:
+    - key: '.metadata.deletionTimestamp'
+      operator: 'Exists'
+    - key: '.status.podIP'
+      operator: 'Exists'
+  next:
+    delete: true

@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dep-kwok
+  namespace: demo
+  labels:
+    app: httpserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: httpserver
+  template:
+    metadata:
+      labels:
+        app: httpserver
+    spec:
+      nodeSelector:
+        type: kwok
+      tolerations:
+        - key: "kwok.x-k8s.io/node"
+          operator: "Exists"
+      containers:
+        - name: kwok-container
+          image: mcr.microsoft.com/dotnet/framework/samples:aspnetapp
+          ports:
+            - containerPort: 80

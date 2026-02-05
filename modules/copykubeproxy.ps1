@@ -7,7 +7,7 @@ if (-not (Test-Path -Path C:\k\kube-proxy_Orig.exe)) {
 }
 Stop-Service -Force KubeProxy
 Start-Sleep -Seconds 2
-rm C:\k\kubeproxy.err.log -ErrorAction SilentlyContinue
+rm C:\k\kubeproxy.* -ErrorAction SilentlyContinue
 c:\k\sfpcopy.exe .\kubeproxy\kube-proxy.exe C:\k\kube-proxy.exe
 for ($i = 0; $i -lt 3; $i++) {
     Restart-Service -Force hns

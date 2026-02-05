@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dep-real-index
+  namespace: demo
+  labels:
+    app: httpserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: httpserver
+  template:
+    metadata:
+      labels:
+        app: httpserver
+    spec:
+      nodeSelector:
+        kubernetes.azure.com/os-sku: Windows2022
+      containers:
+        - name: httpserver
+          image: mcr.microsoft.com/dotnet/framework/samples:aspnetapp
+          ports:
+            - containerPort: 80

@@ -10,7 +10,7 @@ $Global:OS_SKU="Windows2022"
 $Global:NODE_COUNT="2"
 $Global:NODE_VM_SIZE="Standard_E8-2as_v5" # Standard_D4s_v5 (Low CPU) / Standard_E8-2as_v5 (High CPU)
 
-$Global:HPC_NAME="hpc-ds-win"
+$Global:HPC_NAME="hpc-ds-win22"
 $Global:NAMESPACE  ="demo"
 $Global:SERVER_POD_DEPLOYMENT="httpserver"
 $Global:LOGS_ROOT_DIR="C:\Users\ppereira\Logs\Bugs\Cilium\KubeProxyDualStackbehav"
