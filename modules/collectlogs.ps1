@@ -246,7 +246,7 @@ function Get-RundownState {
         }
         Execute-DiagnosticCommand -Command "tasklist /m cncapi.dll" -OutFile $nodeInformationFile
         Execute-DiagnosticCommand -Command "tasklist /m wcnagent.dll" -OutFile $nodeInformationFile
-        Execute-DiagnosticCommand -Command "reg query HKLM\SYSTEM\CurrentControlSet\Services\HNS /s" -OutFile $nodeInformationFile
+        # Execute-DiagnosticCommand -Command "reg query HKLM\SYSTEM\CurrentControlSet\Services\HNS /s" -OutFile $nodeInformationFile
         Execute-DiagnosticCommand -Command "Get-Hotfix" -OutFile $nodeInformationFile
         Execute-DiagnosticCommand -Command "Get-ItemProperty `"HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion`"" -OutFile $nodeInformationFile
 

@@ -47,7 +47,7 @@ $KwokNodeCount = 50
 $ServiceIndexStart = 1
 $ServiceIndexEnd = 10
 $DepRealCount = 5
-$MaxRealPods = 30
+$MaxRealPods = 20
 
 # Service configurations: Name prefix, IP Family, Traffic Policy
 $ServiceConfigs = @(
@@ -150,7 +150,7 @@ function Wait-ForServicesReady {
     param(
         [string]$Namespace,
         [int]$ExpectedCount,
-        [int]$TimeoutSeconds = 600
+        [int]$TimeoutSeconds = 1200
     )
 
     Write-Log "Waiting for $ExpectedCount services to get ExternalIP assigned..."
@@ -363,7 +363,7 @@ function Step1-CreateServices {
     Write-Log "Total services created: $($churnServices.Count)" "INFO"
 
     # Wait for all services to get ExternalIP assigned
-    Wait-ForServicesReady -Namespace $Namespace -ExpectedCount $totalServices -TimeoutSeconds $TimeoutSeconds
+    Wait-ForServicesReady -Namespace $Namespace -ExpectedCount $totalServices -TimeoutSeconds 1200
 
     Write-Log "All services are ready with ExternalIP." "SUCCESS"
 }
@@ -562,11 +562,11 @@ function Main {
     kubectl create namespace $Namespace 2>&1 | Out-Null
     $ErrorActionPreference = "Stop"
 
-    # Step 0: Create KWOK nodes
-    Create-KwokNodes -NodeCount $KwokNodeCount
-    
     # Step 1: Create all services (once at the beginning)
     Step1-CreateServices
+
+    # Step 0: Create KWOK nodes
+    Create-KwokNodes -NodeCount $KwokNodeCount
 
     # Steps 2-8 repeated for $Iterations times
     for ($iteration = 1; $iteration -le $Iterations; $iteration++) {

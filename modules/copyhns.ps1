@@ -6,8 +6,8 @@ if (-not (Test-Path -Path C:\k\HostNetSvc_Orig.dll)) {
     Copy-Item -Path .\sfpcopy.exe -Destination C:\k\sfpcopy.exe -Force
 }
 Stop-Service -Force KubeProxy
-Start-Sleep -Seconds 2
-rm C:\k\kubeproxy.err.log -ErrorAction SilentlyContinue
+Start-Sleep -Seconds 5
+rm C:\k\kubeproxy.* -ErrorAction SilentlyContinue
 c:\k\sfpcopy.exe .\hns\HostNetSvc.dll C:\windows\system32\HostNetSvc.dll
 for ($i = 0; $i -lt 3; $i++) {
     Restart-Service -Force hns
@@ -19,7 +19,7 @@ for ($i = 0; $i -lt 3; $i++) {
     Write-Host "Retrying restart of hns service (Attempt $($i + 1))" -ForegroundColor DarkYellow
 }
 for ($i = 0; $i -lt 3; $i++) {
-    Restart-Service -Force KubeProxy
+    Restart-Computer -Force
     if ($LASTEXITCODE -eq 0) {
         Write-Host "Successfully restarted KubeProxy service." -ForegroundColor Green
         break
