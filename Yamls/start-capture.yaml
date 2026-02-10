@@ -7,6 +7,34 @@ metadata:
 data:
   start-capture.ps1: |
 
+    function Save-CompartmentInfo
+    {
+      $compFile = "c:\k\traces\compartments.txt"
+      Write-Output "#================= All Compartments ========== $(Get-Date) ==========#" >> $compFile
+      $comps = ipconfig /allcompartments /all
+      Write-Output "$($comps | Out-String)" >> $compFile
+
+      Write-Output "#================= All NetIPAddresses ====================#" >> $compFile
+      $comps = Get-NetIPAddress -IncludeAllCompartments
+      Write-Output "$($comps | Out-String)" >> $compFile
+
+      Write-Output "#================= All NetIPInterfaces ====================#" >> $compFile
+      $comps = Get-NetIPInterface -IncludeAllCompartments
+      Write-Output "$($comps | Out-String)" >> $compFile
+    }
+
+    function Save-ServiceInfo
+    {
+      $compFile = "c:\k\traces\services.txt"
+      Write-Output "#================= All Processes ========== $(Get-Date) ==========#" >> $compFile
+      $comps = Get-Process | Select Name, Id
+      Write-Output "$($comps | Out-String)" >> $compFile
+
+      Write-Output "#================= All Services ====================#" >> $compFile
+      $comps = Get-WmiObject Win32_Service | Where-Object { $_.ProcessId -ne 0 } | Select Name, DisplayName, ProcessId
+      Write-Output "$($comps | Out-String)" >> $compFile
+    }
+
     mkdir -Force "c:\k\traces\"
 
     $restartTime = (Get-Date -Format "MMdd_HHmmss")
@@ -15,6 +43,9 @@ data:
 
     While($true){
       
+      Save-CompartmentInfo
+      Save-ServiceInfo
+
       $fileName = "c:\k\traces\trace" +  (Get-Date -Format "MMdd_HHmmss") + ".etl"
       
       Write-Host "Stopping capture" -ForegroundColor Yellow
@@ -24,8 +55,15 @@ data:
 
       netsh trace start provider="{425f4e76-8d2d-506f-57d6-ab466512e14b}" level=6 provider="{6ff0db31-e888-5328-7cb4-33b76702e6e8}" level=6  provider="{0C885E0D-6EB6-476C-A048-2457EED3A5C1}" level=6 provider="{2F07E2EE-15DB-40F1-90EF-9D7BA282188A}" level=6 tracefile=$fileName report=di persistent=yes ov=yes maxSize=1024
 
-      Start-Sleep -Seconds 600
-
+      Start-Sleep -Seconds 120
+      Save-CompartmentInfo
+      Start-Sleep -Seconds 120
+      Save-CompartmentInfo
+      Start-Sleep -Seconds 120
+      Save-CompartmentInfo
+      Start-Sleep -Seconds 120
+      Save-CompartmentInfo
+      Start-Sleep -Seconds 120
     }
 
 ---
