@@ -1,7 +1,8 @@
 param(
     [Parameter(Mandatory=$true)][string]$DstPath,
     [Parameter(Mandatory=$false)][switch]$IsCiliumNode,
-    [Parameter(Mandatory=$false)][switch]$IncludeInstallLogs
+    [Parameter(Mandatory=$false)][switch]$IncludeInstallLogs,
+    [Parameter(Mandatory=$false)][switch]$IncludeOnlyKubeProxyLogs
 )
 
 Import-Module -Force .\modules\constants.psm1
@@ -61,6 +62,7 @@ kubectl delete -f .\Yamls\start-capture.yaml
 
 $includeLogsParam = if ($IncludeInstallLogs) { "-IncludeInstallLogs `$true" } else { "-IncludeInstallLogs `$false" }
 $isCiliumNodeParam = if ($IsCiliumNode) { "-IsCiliumNode `$true" } else { "-IsCiliumNode `$false" }
+$onlyKubeProxyParam = if ($IncludeOnlyKubeProxyLogs) { "-IncludeOnlyKubeProxyLogs `$true" } else { "-IncludeOnlyKubeProxyLogs `$false" }
 
 $allHpcPods = Get-AllHpcPods
 foreach ($pod in $allHpcPods) {
@@ -68,7 +70,7 @@ foreach ($pod in $allHpcPods) {
     Write-Host "Copying collect script to Pod: $pod" -ForegroundColor DarkYellow
     kubectl cp -n $namespace .\modules\collectlogs.ps1 $pod`:collectlogs.ps1
     Write-Host "Executing collect script in Pod: $pod" -ForegroundColor DarkYellow
-    kubectl exec -n $namespace $pod -- powershell -Command ".\collectlogs.ps1 $isCiliumNodeParam $includeLogsParam"
+    kubectl exec -n $namespace $pod -- powershell -Command ".\collectlogs.ps1 $isCiliumNodeParam $includeLogsParam $onlyKubeProxyParam"
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Failed to execute collect script in Pod: $pod" -ForegroundColor Red
         continue

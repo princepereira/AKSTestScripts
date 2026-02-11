@@ -1,6 +1,7 @@
 param(
     [Parameter(Mandatory=$false)][bool]$IsCiliumNode = $false,
-    [Parameter(Mandatory=$false)][bool]$IncludeInstallLogs = $false
+    [Parameter(Mandatory=$false)][bool]$IncludeInstallLogs = $false,
+    [Parameter(Mandatory=$false)][bool]$IncludeOnlyKubeProxyLogs = $false
 )
 
 function Log-Message {
@@ -64,12 +65,30 @@ function Get-RundownState {
         [String] $stateDir,
         [switch] $VerboseState,
         [bool] $IsCiliumNode = $false,
-        [bool] $IncludeInstallLogs = $false
+        [bool] $IncludeInstallLogs = $false,
+        [bool] $IncludeOnlyKubeProxyLogs = $false
     )
     try {
         Log-Message "===== Get-RundownState operation started ======"
         if (-not (Test-Path $stateDir)) {
             New-Item -ItemType Directory -Path $stateDir
+        }
+
+        # Get kubeproxy logs (always collected, or only these if IncludeOnlyKubeProxyLogs is set)
+        $kubeproxyLogsDir = Join-Path $stateDir "kubeproxylogs"
+        $kubeProxyMetricsFile = Join-Path $kubeproxyLogsDir "metrics.txt"
+        if (-not (Test-Path $kubeproxyLogsDir)) {
+            New-Item -ItemType Directory -Path $kubeproxyLogsDir -Force
+        }
+        Log-Message "Copying kubeproxy logs (C:\k\kubeproxy.*)"
+        Copy-Item -Path "C:\k\kubeproxy.*" -Destination $kubeproxyLogsDir -Force -ErrorAction Ignore
+        Execute-DiagnosticCommand -Command "(curl http://127.0.0.1:10249/metrics -UseBasicParsing).RawContent" -OutFile $kubeProxyMetricsFile
+
+        # If only kube-proxy logs are requested, skip everything else
+        if ($IncludeOnlyKubeProxyLogs) {
+            Log-Message "IncludeOnlyKubeProxyLogs is set, skipping other logs collection."
+            Log-Message "===== Get-RundownState operation completed ====="
+            return
         }
 
         # Get HNS state
@@ -184,16 +203,6 @@ function Get-RundownState {
             Execute-DiagnosticCommand -Command "wcncli.exe --module wcn service-info" -OutFile $wcnServiceInfoFile
 
         }
-
-        # Get kubeproxy logs
-        $kubeproxyLogsDir = Join-Path $stateDir "kubeproxylogs"
-        $kubeProxyMetricsFile = Join-Path $kubeproxyLogsDir "metrics.txt"
-        if (-not (Test-Path $kubeproxyLogsDir)) {
-            New-Item -ItemType Directory -Path $kubeproxyLogsDir -Force
-        }
-        Log-Message "Copying kubeproxy logs (C:\k\kubeproxy.*)"
-        Copy-Item -Path "C:\k\kubeproxy.*" -Destination $kubeproxyLogsDir -Force -ErrorAction Ignore
-        Execute-DiagnosticCommand -Command "(curl http://127.0.0.1:10249/metrics -UseBasicParsing).RawContent" -OutFile $kubeProxyMetricsFile
 
         # Get containerd logs
         $containerdLogsDir = Join-Path $stateDir "containerdlogs"
@@ -329,7 +338,7 @@ foreach ($port in $ports) {
 	vfpctrl /port $port /list-rule >> .\vfprules.txt
 }
 
-Get-RundownState -stateDir . -VerboseState:$true -IsCiliumNode $IsCiliumNode -IncludeInstallLogs $IncludeInstallLogs
+Get-RundownState -stateDir . -VerboseState:$true -IsCiliumNode $IsCiliumNode -IncludeInstallLogs $IncludeInstallLogs -IncludeOnlyKubeProxyLogs $IncludeOnlyKubeProxyLogs
 
 #============================== EBPF =============================
 Set-Location ..
