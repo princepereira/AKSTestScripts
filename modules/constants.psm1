@@ -1,6 +1,6 @@
 $Global:SUBSCRIPTION_ID="b8c06bcd-5024-43fa-9507-691b5623f59a"
 $Global:RG_NAME="pper-vfptest-rg"
-$Global:LOCATION="westeurope"
+$Global:LOCATION="westus2"
 $Global:CLUSTER_NAME="pper-vfptest-aks"
 $Global:NODE_USER_NAME="prince"
 $Global:NODE_PASSWORD="prince@123456123456"

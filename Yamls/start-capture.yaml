@@ -44,7 +44,7 @@ data:
     While($true){
       
       Save-CompartmentInfo
-      Save-ServiceInfo
+      # Save-ServiceInfo
 
       $fileName = "c:\k\traces\trace" +  (Get-Date -Format "MMdd_HHmmss") + ".etl"
       

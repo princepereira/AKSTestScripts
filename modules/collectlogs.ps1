@@ -327,16 +327,48 @@ function Get-RundownState {
     Log-Message "===== Get-RundownState operation completed ====="
 }
 
+function VfpPortToEndpointMapping {
+    $ports = (vfpctrl.exe /list-vmswitch-port /format 1 | ConvertFrom-Json).Ports
+    $endpoints = Get-HnsEndpoint
+
+    $results = foreach ($port in $ports) {
+
+        $portName = $port.Name
+        $portId   = $port.Id
+        $portMac  = $port.MacAddress
+        $portNo   = $port.VmsPortId
+
+        # Normalize MAC (00155D5AB0B2 → 00-15-5D-5A-B0-B2)
+        $epMac = ($portMac -split '(.{2})' | Where-Object { $_ }) -join '-'
+
+        $ep = $endpoints | Where-Object { $_.MacAddress -eq $epMac } | Select-Object -First 1
+
+        [pscustomobject]@{
+            "VFP Port"      = $portId
+            "VFP Port Name" = $portName
+            "VFP Port No."  = $portNo
+            "EP ID"         = $ep.ID
+            "IPv4"          = $ep.IPAddress
+            "IPv6"          = $ep.IPv6Address
+            "MAC"           = $epMac
+        }
+    }
+
+    $results > vfp_port_endpoint_mapping.txt
+}
+
 mkdir logs -ErrorAction SilentlyContinue
 Set-Location logs
 Remove-Item -Recurse -Force * -ErrorAction SilentlyContinue
 
 #============================== VFP =============================
+vfpctrl.exe /list-vmswitch-port > vfpports.txt
 $ports = (vfpctrl.exe /list-vmswitch-port /format 1 | ConvertFrom-Json).Ports.Name
 foreach ($port in $ports) {
-	Write-Output "Dumping vfp rules for Port: $port" > vfprules.txt
+	Write-Output "##================ Dumping vfp rules for Port: $port ================##" >> .\vfprules.txt
 	vfpctrl /port $port /list-rule >> .\vfprules.txt
 }
+VfpPortToEndpointMapping
 
 Get-RundownState -stateDir . -VerboseState:$true -IsCiliumNode $IsCiliumNode -IncludeInstallLogs $IncludeInstallLogs -IncludeOnlyKubeProxyLogs $IncludeOnlyKubeProxyLogs
 

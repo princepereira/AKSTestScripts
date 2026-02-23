@@ -9,6 +9,7 @@ Stop-Service -Force KubeProxy
 Start-Sleep -Seconds 5
 rm C:\k\kubeproxy.* -ErrorAction SilentlyContinue
 c:\k\sfpcopy.exe .\hns\HostNetSvc.dll C:\windows\system32\HostNetSvc.dll
+Start-Sleep -Seconds 5
 for ($i = 0; $i -lt 3; $i++) {
     Restart-Service -Force hns
     if ($LASTEXITCODE -eq 0) {
@@ -19,7 +20,7 @@ for ($i = 0; $i -lt 3; $i++) {
     Write-Host "Retrying restart of hns service (Attempt $($i + 1))" -ForegroundColor DarkYellow
 }
 for ($i = 0; $i -lt 3; $i++) {
-    Restart-Computer -Force
+    Start-Service KubeProxy
     if ($LASTEXITCODE -eq 0) {
         Write-Host "Successfully restarted KubeProxy service." -ForegroundColor Green
         break

@@ -47,7 +47,7 @@ $KwokNodeCount = 50
 $ServiceIndexStart = 1
 $ServiceIndexEnd = 10
 $DepRealCount = 5
-$MaxRealPods = 20
+$MaxRealPods = 15
 
 # Service configurations: Name prefix, IP Family, Traffic Policy
 $ServiceConfigs = @(
