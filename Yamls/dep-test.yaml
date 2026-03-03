@@ -16,7 +16,7 @@ spec:
         app: httpserver
     spec:
       nodeSelector:
-        kubernetes.azure.com/os-sku: Windows2022
+        kubernetes.io/os: windows
       containers:
         - name: httpserver
           image: mcr.microsoft.com/dotnet/framework/samples:aspnetapp

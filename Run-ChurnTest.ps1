@@ -30,6 +30,8 @@ param(
     [switch]$SkipIPv6
 )
 
+ipmo -Force .\modules\trace.psm1
+
 $ErrorActionPreference = "Stop"
 
 # Paths to YAML templates
@@ -568,6 +570,12 @@ function Main {
     # Step 0: Create KWOK nodes
     Create-KwokNodes -NodeCount $KwokNodeCount
 
+    Stop-Trace
+    Remove-Trace
+    # Enable-CrashDump
+    #$pidsBefore = Get-ProcessIds -Label "Before"
+    Start-Trace
+
     # Steps 2-8 repeated for $Iterations times
     for ($iteration = 1; $iteration -le $Iterations; $iteration++) {
         Write-Log "========================================"
@@ -603,6 +611,11 @@ function Main {
 
     # Step 10: Delete all services
     Step10-DeleteServices
+
+    Start-Sleep -Seconds 10
+    Stop-Trace
+
+    Convert-Trace
 
     # Step 11: Delete KWOK nodes
     Delete-KwokNodes -NodeCount $KwokNodeCount
