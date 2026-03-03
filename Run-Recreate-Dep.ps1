@@ -9,6 +9,11 @@ param(
     [string]$LocalTraceDir = ".\traces"
 )
 
+Import-Module -Force .\modules\constants.psm1
+
+$Namespace = $Global:NAMESPACE
+$DaemonSetLabel = $Global:HPC_NAME
+
 # Get all HPC pods
 $hpcPods = @(kubectl get pods -n $Namespace -l name=$DaemonSetLabel -o jsonpath='{.items[*].metadata.name}' | ForEach-Object { $_ -split '\s+' } | Where-Object { $_ })
 if ($hpcPods.Count -eq 0) {
