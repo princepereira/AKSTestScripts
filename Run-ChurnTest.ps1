@@ -570,11 +570,11 @@ function Main {
     # Step 0: Create KWOK nodes
     Create-KwokNodes -NodeCount $KwokNodeCount
 
-    Stop-Trace
-    Remove-Trace
+    # Stop-Trace
+    # Remove-Trace
     # Enable-CrashDump
     #$pidsBefore = Get-ProcessIds -Label "Before"
-    Start-Trace
+    # Start-Trace
 
     # Steps 2-8 repeated for $Iterations times
     for ($iteration = 1; $iteration -le $Iterations; $iteration++) {
@@ -613,9 +613,9 @@ function Main {
     Step10-DeleteServices
 
     Start-Sleep -Seconds 10
-    Stop-Trace
+    # Stop-Trace
 
-    Convert-Trace
+    # Convert-Trace
 
     # Step 11: Delete KWOK nodes
     Delete-KwokNodes -NodeCount $KwokNodeCount
