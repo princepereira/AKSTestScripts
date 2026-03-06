@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: httpclient
+  namespace: demo
+  labels:
+    app: httpclient
+spec:
+  replicas: 8
+  selector:
+    matchLabels:
+      app: httpclient
+  template:
+    metadata:
+      labels:
+        app: httpclient
+    spec:
+      nodeSelector:
+        kubernetes.io/os: windows
+      containers:
+        - name: httpclient
+          image: mcr.microsoft.com/dotnet/framework/samples:aspnetapp
