@@ -112,6 +112,9 @@ function Wait-ForPods {
             Write-Host "." -NoNewline
             Start-Sleep -Seconds 5
         }
+
+        # Delete any pods stuck in Terminating state to speed up the process
+        kubectl get pods -n $Namespace --no-headers | Select-String "Terminating" | ForEach-Object { $pod = ($_.ToString().Trim() -split '\s+')[0]; Write-Host "Deleting $pod"; kubectl delete pod $pod -n $Namespace --grace-period=0 --force }
     }
     
     return $true
@@ -145,6 +148,9 @@ function Wait-ForPodsTerminated {
         
         Write-Host "." -NoNewline
         Start-Sleep -Seconds 5
+
+        # Delete any pods stuck in Terminating state to speed up the process
+        kubectl get pods -n $Namespace --no-headers | Select-String "Terminating" | ForEach-Object { $pod = ($_.ToString().Trim() -split '\s+')[0]; Write-Host "Deleting $pod"; kubectl delete pod $pod -n $Namespace --grace-period=0 --force }
     }
 }
 
