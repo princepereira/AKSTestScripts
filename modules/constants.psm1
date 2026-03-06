@@ -13,4 +13,5 @@ $Global:NODE_VM_SIZE="Standard_E8-2as_v5" # Standard_D4s_v5 (Low CPU) / Standard
 $Global:HPC_NAME="hpc-ds-win"
 $Global:NAMESPACE  ="demo"
 $Global:SERVER_POD_DEPLOYMENT="httpserver"
+$Global:CLIENT_POD_DEPLOYMENT="httpclient"
 $Global:LOGS_ROOT_DIR="C:\Users\ppereira\Logs\Bugs\Cilium\KubeProxyDualStackbehav"

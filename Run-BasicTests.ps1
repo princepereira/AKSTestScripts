@@ -7,6 +7,7 @@ Import-Module -Force .\modules\constants.psm1
 $namespace = $Global:NAMESPACE
 $hpcDaemonsSet = $Global:HPC_NAME
 $serverPodDeployment = $Global:SERVER_POD_DEPLOYMENT
+$clientPodDeployment = $Global:CLIENT_POD_DEPLOYMENT
 $retry = 2
 $testLogsPath = ".\ConnectivityLogs.txt"
 
@@ -104,6 +105,19 @@ function Get-AllServerPods {
     }
     Log -Message "Server Pods found:" -InputObject $allServerPods
     return $allServerPods
+}
+
+# Returns a map of Client Pod Names to Node Names
+function Get-AllClientPods {
+    $items = (kubectl get pods -n $namespace -l app=$clientPodDeployment -o json | ConvertFrom-Json).items
+    $allClientPods = @{}
+    foreach ($item in $items) {
+        $podName = $item.metadata.name
+        $nodeName = $item.spec.nodeName
+        $allClientPods[$podName] = $nodeName
+    }
+    Log -Message "Client Pods found:" -InputObject $allClientPods
+    return $allClientPods
 }
 
 # Returns a map of NodeIP to NodeName for Windows nodes
@@ -263,6 +277,9 @@ function Log-Result {
     }
     $NodeName = $Global:allHpcPods[$Source]
     If ($null -Eq $NodeName) {
+        $NodeName = $Global:allClientPods[$Source]
+    }
+    If ($null -Eq $NodeName) {
         $NodeName = $Global:allServerPods[$Source]
     }
     If ($null -ne $NodeName) {
@@ -305,6 +322,10 @@ function Print-PodsAndServices {
     Write-Host "All Server Pods" -ForegroundColor Cyan
     Write-Host "================================"
     $Global:allServerPods | Format-Table
+    Write-Host "================================"
+    Write-Host "All Client Pods" -ForegroundColor Cyan
+    Write-Host "================================"
+    $Global:allClientPods | Format-Table
     Write-Host "All ClusterIP Services" -ForegroundColor Cyan
     Write-Host "================================"
     $Global:allServices[$SvcTypeClusterIP] | Format-Table
@@ -332,6 +353,10 @@ function Log-PodsAndServices {
     Write-Output "All Server Pods" | Out-File -FilePath $testLogsPath -Encoding utf8 -Append
     Write-Output "================================" | Out-File -FilePath $testLogsPath -Encoding utf8 -Append
     $Global:allServerPods | Format-Table | Out-File -FilePath $testLogsPath -Encoding utf8 -Append
+    Write-Output "================================" | Out-File -FilePath $testLogsPath -Encoding utf8 -Append
+    Write-Output "All Client Pods" | Out-File -FilePath $testLogsPath -Encoding utf8 -Append
+    Write-Output "================================" | Out-File -FilePath $testLogsPath -Encoding utf8 -Append
+    $Global:allClientPods | Format-Table | Out-File -FilePath $testLogsPath -Encoding utf8 -Append
     Write-Output "All ClusterIP Services" | Out-File -FilePath $testLogsPath -Encoding utf8 -Append
     Write-Output "================================" | Out-File -FilePath $testLogsPath -Encoding utf8 -Append
     $Global:allServices[$SvcTypeClusterIP] | Format-Table | Out-File -FilePath $testLogsPath -Encoding utf8 -Append
@@ -391,6 +416,7 @@ function Print-TestSummary {
 $Global:allHpcPods = Get-AllHpcPods
 $Global:allServices = Get-AllServices
 $Global:allServerPods = Get-AllServerPods
+$Global:allClientPods = Get-AllClientPods
 $Global:allNodeIPs = Get-AllNodeIPs
 $Global:hnsPolicies = Get-HnsPolicies
 
@@ -406,14 +432,14 @@ if ($RunClusterIPTests) {
     foreach ($service in $Global:allServices[$SvcTypeClusterIP]) {
         $nodeTested = @{}
         # Pod to ClusterIP Tests
-        foreach ($pod in $Global:allServerPods.Keys) {
-            $nodeNameFromPod = $Global:allServerPods[$pod]
+        foreach ($pod in $Global:allClientPods.Keys) {
+            $nodeNameFromPod = $Global:allClientPods[$pod]
             if ($nodeTested.ContainsKey($nodeNameFromPod)) {
-                Log -Message "Skipping ClusterIP test from Server Pod: '$pod' on Node: '$nodeNameFromPod' to Service '$($service.Name)' at $($service.ExternalIP):$($service.ExternalPort) as this node has already been tested." -Color DarkGray
+                Log -Message "Skipping ClusterIP test from Client Pod: '$pod' on Node: '$nodeNameFromPod' to Service '$($service.Name)' at $($service.ExternalIP):$($service.ExternalPort) as this node has already been tested." -Color DarkGray
                 continue
             }
             $nodeTested[$nodeNameFromPod] = $true
-            Log -Message "Testing ClusterIP connectivity from Pod: '$pod' to Service '$($service.Name)' at $($service.ExternalIP):$($service.ExternalPort)..." -Color Yellow
+            Log -Message "Testing ClusterIP connectivity from Client Pod: '$pod' to Service '$($service.Name)' at $($service.ExternalIP):$($service.ExternalPort)..." -Color Yellow
             $cmd = "kubectl exec -n $namespace $pod -- powershell -Command 'Test-NetConnection $($service.ExternalIP) -Port $($service.ExternalPort) | Select-Object -ExpandProperty TcpTestSucceeded'"
             for($i = 1; $i -le $retry; $i++) {
                 $ok = kubectl exec -n $namespace $pod -- powershell -Command "Test-NetConnection $($service.ExternalIP) -Port $($service.ExternalPort) | Select-Object -ExpandProperty TcpTestSucceeded"
@@ -446,18 +472,18 @@ if ($RunNodePortTests) {
         $nodeTested = @{}
         $nodeNameFromNodeIP = $Global:allNodeIPs[$service.ExternalIP]
         # Pod to NodePort Tests
-        foreach ($pod in $Global:allServerPods.Keys) {
-            $nodeNameFromPod = $Global:allServerPods[$pod]
+        foreach ($pod in $Global:allClientPods.Keys) {
+            $nodeNameFromPod = $Global:allClientPods[$pod]
             if ($nodeNameFromPod -ne $nodeNameFromNodeIP) {
-                Log -Message "Skipping NodePort test from Server Pod: '$pod' on Node: '$nodeNameFromPod' to Service '$($service.Name)' at $($service.ExternalIP):$($service.ExternalPort) as they are on different nodes." -Color DarkGray
+                Log -Message "Skipping NodePort test from Client Pod: '$pod' on Node: '$nodeNameFromPod' to Service '$($service.Name)' at $($service.ExternalIP):$($service.ExternalPort) as they are on different nodes." -Color DarkGray
                 continue
             }
             if ($nodeTested.ContainsKey($nodeNameFromPod)) {
-                Log -Message "Skipping NodePort test from Server Pod: '$pod' on Node: '$nodeNameFromPod' to Service '$($service.Name)' at $($service.ExternalIP):$($service.ExternalPort) as this node has already been tested." -Color DarkGray
+                Log -Message "Skipping NodePort test from Client Pod: '$pod' on Node: '$nodeNameFromPod' to Service '$($service.Name)' at $($service.ExternalIP):$($service.ExternalPort) as this node has already been tested." -Color DarkGray
                 continue
             }
             $nodeTested[$nodeNameFromPod] = $true
-            Log -Message "Testing NodePort connectivity from Pod: '$pod' to Service '$($service.Name)' at $($service.ExternalIP):$($service.ExternalPort)..." -Color Yellow
+            Log -Message "Testing NodePort connectivity from Client Pod: '$pod' to Service '$($service.Name)' at $($service.ExternalIP):$($service.ExternalPort)..." -Color Yellow
             $cmd = "kubectl exec -n $namespace $pod -- powershell -Command 'Test-NetConnection $($service.ExternalIP) -Port $($service.ExternalPort) | Select-Object -ExpandProperty TcpTestSucceeded'"
             for($i = 1; $i -le $retry; $i++) {
                 $ok = kubectl exec -n $namespace $pod -- powershell -Command "Test-NetConnection $($service.ExternalIP) -Port $($service.ExternalPort) | Select-Object -ExpandProperty TcpTestSucceeded"
@@ -495,14 +521,14 @@ if ($RunLoadBalancerTests) {
     foreach ($service in $Global:allServices[$SvcTypeLoadBalancer]) {
         $nodeTested = @{}
         # Pod to IngressIP Tests
-        foreach ($pod in $Global:allServerPods.Keys) {
-            $nodeNameFromPod = $Global:allServerPods[$pod]
+        foreach ($pod in $Global:allClientPods.Keys) {
+            $nodeNameFromPod = $Global:allClientPods[$pod]
             if ($nodeTested.ContainsKey($nodeNameFromPod)) {
-                Log -Message "Skipping LoadBalancer test from Server Pod: '$pod' on Node: '$nodeNameFromPod' to Service '$($service.Name)' at $($service.ExternalIP):$($service.ExternalPort) as this node has already been tested." -Color DarkGray
+                Log -Message "Skipping LoadBalancer test from Client Pod: '$pod' on Node: '$nodeNameFromPod' to Service '$($service.Name)' at $($service.ExternalIP):$($service.ExternalPort) as this node has already been tested." -Color DarkGray
                 continue
             }
             $nodeTested[$nodeNameFromPod] = $true
-            Log -Message "Testing LoadBalancer connectivity from Server Pod: '$pod' to Service '$($service.Name)' at $($service.ExternalIP):$($service.ExternalPort)..." -Color Yellow
+            Log -Message "Testing LoadBalancer connectivity from Client Pod: '$pod' to Service '$($service.Name)' at $($service.ExternalIP):$($service.ExternalPort)..." -Color Yellow
             $cmd = "kubectl exec -n $namespace $pod -- powershell -Command 'Test-NetConnection $($service.ExternalIP) -Port $($service.ExternalPort) | Select-Object -ExpandProperty TcpTestSucceeded'"
             for($i = 1; $i -le $retry; $i++) {
                 $ok = kubectl exec -n $namespace $pod -- powershell -Command "Test-NetConnection $($service.ExternalIP) -Port $($service.ExternalPort) | Select-Object -ExpandProperty TcpTestSucceeded"

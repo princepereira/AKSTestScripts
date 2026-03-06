@@ -5,6 +5,7 @@ $osSku = $Global:OS_SKU
 
 Write-Host "Deleting Pods and Services..." -ForegroundColor Cyan
 (Get-Content .\Yamls\Dep-Test.yaml).Replace("OS_SKU", $osSku) | kubectl.exe delete -f -
+(Get-Content .\Yamls\Dep-Client.yaml).Replace("OS_SKU", $osSku) | kubectl.exe delete -f -
 kubectl delete -f .\Yamls\Services\.
 # kubectl delete -f .\Yamls\hpc-ds-win.yaml
 # (Get-Content .\Yamls\hpc-ds-win22.yaml).Replace("OS_SKU", $osSku) | kubectl.exe delete -f -
