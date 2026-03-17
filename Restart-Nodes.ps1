@@ -1,6 +1,6 @@
 param(
     [string]$Namespace = "demo",
-    [string]$DaemonSetLabel = "hpc-ds-win22",
+    [string]$DaemonSetLabel = "hpc-ds-win",
     [int]$DelayBetweenNodes = 5
 )
 

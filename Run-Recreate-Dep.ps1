@@ -3,16 +3,21 @@ param(
     [string]$YamlFile = ".\Yamls\dep-test.yaml",
     [int]$DeleteWaitSeconds = 20,
     [int]$CreateWaitSeconds = 20,
-    [string]$Namespace = "demo",
-    [string]$DaemonSetLabel = "hpc-ds-win22",
+    [string]$Namespace,
+    [string]$DaemonSetLabel,
     [string]$TraceFile = "server.etl",
     [string]$LocalTraceDir = ".\traces"
 )
 
 Import-Module -Force .\modules\constants.psm1
 
-$Namespace = $Global:NAMESPACE
-$DaemonSetLabel = $Global:HPC_NAME
+if (-not $Namespace) {
+    $Namespace = $Global:NAMESPACE
+}
+
+if (-not $DaemonSetLabel) {
+    $DaemonSetLabel = $Global:HPC_NAME
+}
 
 # Get all HPC pods
 $hpcPods = @(kubectl get pods -n $Namespace -l name=$DaemonSetLabel -o jsonpath='{.items[*].metadata.name}' | ForEach-Object { $_ -split '\s+' } | Where-Object { $_ })

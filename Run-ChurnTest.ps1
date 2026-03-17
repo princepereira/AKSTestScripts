@@ -24,11 +24,17 @@
 #>
 
 param(
-    [string]$Namespace = "demo",
+    [string]$Namespace,
     [int]$Iterations = 20,
     [int]$TimeoutSeconds = 300,
     [switch]$SkipIPv6
 )
+
+Import-Module -Force .\modules\constants.psm1
+
+if (-not $Namespace) {
+    $Namespace = $Global:NAMESPACE
+}
 
 ipmo -Force .\modules\trace.psm1
 
