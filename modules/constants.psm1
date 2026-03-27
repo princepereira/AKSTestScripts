@@ -1,6 +1,6 @@
 $Global:SUBSCRIPTION_ID="b8c06bcd-5024-43fa-9507-691b5623f59a"
 $Global:RG_NAME="pper-vfptest-rg"
-$Global:LOCATION="eastus2"
+$Global:LOCATION="westus2"
 $Global:CLUSTER_NAME="pper-vfptest-aks"
 $Global:NODE_USER_NAME="prince"
 $Global:NODE_PASSWORD="prince@123456123456"
@@ -9,7 +9,7 @@ $Global:K8S_VERSION="1.32.7"
 $Global:NODE_POOL_NAME="npwin"
 $Global:OS_SKU="Windows2022"
 $Global:NODE_COUNT="2"
-$Global:NODE_VM_SIZE="Standard_E8-2as_v5" # Standard_D4s_v5 (Low CPU) / Standard_E8-2as_v5 (High CPU)
+$Global:NODE_VM_SIZE="Standard_D4s_v5" # Standard_D4s_v5 (Low CPU) / Standard_E8-2as_v5 (High CPU) / Standard_E8-2as_v7
 
 $Global:VNET_NAME="pper-vfptest-vnet"
 $Global:SUBNET_NAME="pper-vfptest-subnet"

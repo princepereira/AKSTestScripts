@@ -5,3 +5,7 @@
 *.json
 *.xml
 *.txt
+
+# Log folders
+Logs/
+dstLogs/

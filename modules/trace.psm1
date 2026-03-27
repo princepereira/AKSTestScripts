@@ -4,7 +4,7 @@ param(
     [int]$DeleteWaitSeconds = 20,
     [int]$CreateWaitSeconds = 20,
     [string]$Namespace = "demo",
-    [string]$DaemonSetLabel = "hpc-ds-win22",
+    [string]$DaemonSetLabel = "hpc-ds-win",
     [string]$TraceFile = "server.etl",
     [string]$LocalTraceDir = ".\traces"
 )

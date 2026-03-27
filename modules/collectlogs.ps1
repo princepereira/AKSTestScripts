@@ -82,6 +82,7 @@ function Get-RundownState {
         }
         Log-Message "Copying kubeproxy logs (C:\k\kubeproxy.*)"
         Copy-Item -Path "C:\k\kubeproxy.*" -Destination $kubeproxyLogsDir -Force -ErrorAction Ignore
+        Copy-Item -Path "C:\k\windows-kubeproxy.*" -Destination $kubeproxyLogsDir -Force -ErrorAction Ignore
         Execute-DiagnosticCommand -Command "(curl http://127.0.0.1:10249/metrics -UseBasicParsing).RawContent" -OutFile $kubeProxyMetricsFile
 
         # If only kube-proxy logs are requested, skip everything else

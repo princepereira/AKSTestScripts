@@ -1,5 +1,5 @@
 param(
-    [Parameter(Mandatory=$true)][string]$DstPath,
+    [Parameter(Mandatory=$false)][string]$DstPath,
     [Parameter(Mandatory=$false)][switch]$IsCiliumNode,
     [Parameter(Mandatory=$false)][switch]$IncludeInstallLogs,
     [Parameter(Mandatory=$false)][switch]$IncludeOnlyKubeProxyLogs
@@ -11,7 +11,20 @@ $namespace = $Global:NAMESPACE
 $hpcDaemonsSet = $Global:HPC_NAME
 $RootDir = $Global:LOGS_ROOT_DIR
 
-$FolderPath = Join-Path -Path $RootDir -ChildPath $DstPath
+if (-Not $DstPath) {
+    # No path provided - create timestamp-based folder under RootDir
+    $DstPath = "Logs_" + (Get-Date -Format "yyMMdd_HHmm")
+    $FolderPath = Join-Path -Path $RootDir -ChildPath $DstPath
+} else {
+    # Use DstPath as-is (can be absolute or relative from current directory)
+    $FolderPath = $DstPath
+    
+    # If it's a relative path, add it to .gitignore
+    if (-Not [System.IO.Path]::IsPathRooted($DstPath)) {
+        $FolderPath = Join-Path -Path "Logs" -ChildPath $DstPath
+    }
+}
+
 if (-Not (Test-Path -Path $FolderPath)) {
     New-Item -ItemType Directory -Path $FolderPath | Out-Null
 }

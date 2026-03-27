@@ -27,7 +27,8 @@ param(
     [string]$Namespace,
     [int]$Iterations = 20,
     [int]$TimeoutSeconds = 300,
-    [switch]$SkipIPv6
+    [switch]$SkipIPv6,
+    [switch]$CheckDuplicateEndpoint
 )
 
 Import-Module -Force .\modules\constants.psm1
@@ -40,6 +41,19 @@ ipmo -Force .\modules\trace.psm1
 
 $ErrorActionPreference = "Stop"
 
+# HPC pod discovery (needed for duplicate endpoint check)
+$hpcDaemonSetLabel = $Global:HPC_NAME
+$hpcPods = @()
+if ($CheckDuplicateEndpoint) {
+    $hpcPods = @(kubectl get pods -n $Namespace -l name=$hpcDaemonSetLabel -o jsonpath='{.items[*].metadata.name}' | ForEach-Object { $_ -split '\s+' } | Where-Object { $_ })
+    if ($hpcPods.Count -eq 0) {
+        Write-Host "WARNING: No HPC pods found (label name=$hpcDaemonSetLabel). Duplicate endpoint check will be skipped." -ForegroundColor Yellow
+        $CheckDuplicateEndpoint = $false
+    } else {
+        Write-Host "Found $($hpcPods.Count) HPC pod(s) for endpoint checks: $($hpcPods -join ', ')" -ForegroundColor Green
+    }
+}
+
 # Paths to YAML templates
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $YamlDir = Join-Path $ScriptDir "Yamls\kwok"
@@ -51,9 +65,9 @@ $NodeKwokYaml = Join-Path $YamlDir "nodes-kwok.yaml"
 $KwokStagesYaml = Join-Path $YamlDir "kwok-stages.yaml"
 
 # KWOK Node configuration
-$KwokNodeCount = 50
+$KwokNodeCount = 10
 $ServiceIndexStart = 1
-$ServiceIndexEnd = 10
+$ServiceIndexEnd = 2
 $DepRealCount = 5
 $MaxRealPods = 15
 
@@ -197,6 +211,28 @@ function Wait-ForServicesReady {
         Write-Log "Services ready: $readyCount / $ExpectedCount" "INFO"
         Start-Sleep -Seconds 10
     }
+}
+
+function Test-DuplicateEndpointIPs {
+    $foundDuplicate = $false
+    foreach ($pod in $hpcPods) {
+        Write-Log "Querying HNS endpoints on $pod ..."
+        $raw = kubectl exec -n $Namespace $pod -- powershell -Command "(Get-HnsEndpoint).IPAddress" 2>$null
+        if (-not $raw) { continue }
+
+        $ipCounts = @{}
+        $raw -split "`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ } | ForEach-Object {
+            if ($ipCounts.ContainsKey($_)) { $ipCounts[$_]++ } else { $ipCounts[$_] = 1 }
+        }
+
+        $dupes = $ipCounts.GetEnumerator() | Where-Object { $_.Value -gt 1 }
+        if ($dupes) {
+            $dupeList = ($dupes | ForEach-Object { "$($_.Key) (x$($_.Value))" }) -join ", "
+            Write-Log "DUPLICATE HNS endpoint IPs on ${pod}: $dupeList" "ERROR"
+            $foundDuplicate = $true
+        }
+    }
+    return $foundDuplicate
 }
 
 function Apply-YamlWithIndexReplacement {
@@ -577,7 +613,11 @@ function Main {
     $ErrorActionPreference = "Stop"
 
     # Step 1: Create all services (once at the beginning)
-    Step1-CreateServices
+    # Step1-CreateServices
+
+    # Step 0: Delete any existing KWOK nodes before starting
+    Write-Log "Cleaning up any existing KWOK nodes..." "INFO"
+    kubectl delete nodes -l type=kwok --ignore-not-found 2>&1 | Out-Null
 
     # Step 0: Create KWOK nodes
     Create-KwokNodes -NodeCount $KwokNodeCount
@@ -589,6 +629,7 @@ function Main {
     # Start-Trace
 
     # Steps 2-8 repeated for $Iterations times
+    $duplicateFound = $false
     for ($iteration = 1; $iteration -le $Iterations; $iteration++) {
         Write-Log "========================================"
         Write-Log "    ITERATION $iteration of $Iterations" "INFO"
@@ -599,8 +640,28 @@ function Main {
         # Step 2: Create deployments
         Step2-CreateDeployments
 
+        if ($CheckDuplicateEndpoint) {
+            Write-Log "Checking for duplicate endpoint IPs after Step 2 (Create)..."
+            if (Test-DuplicateEndpointIPs) {
+                Write-Log "BREAKING OUT: Duplicate endpoint IPs detected at iteration $iteration (after Create)!" "ERROR"
+                $duplicateFound = $true
+                break
+            }
+            Write-Log "No duplicate endpoint IPs found." "SUCCESS"
+        }
+
         # Step 3: Scale UP (500 KWOK, 10 real each)
         Step3-ScaleUp -KwokReplicas 500 -RealReplicasPerDep 10
+
+        if ($CheckDuplicateEndpoint) {
+            Write-Log "Checking for duplicate endpoint IPs after Step 3 (Scale UP)..."
+            if (Test-DuplicateEndpointIPs) {
+                Write-Log "BREAKING OUT: Duplicate endpoint IPs detected at iteration $iteration (after Scale UP)!" "ERROR"
+                $duplicateFound = $true
+                break
+            }
+            Write-Log "No duplicate endpoint IPs found." "SUCCESS"
+        }
 
         # Step 4: Scale DOWN (10 KWOK, 2 real each)
         Step4-ScaleDown -KwokReplicas 10 -RealReplicasPerDep 2
@@ -608,11 +669,31 @@ function Main {
         # Step 5: Scale UP again (500 KWOK, 10 real each)
         Step3-ScaleUp -KwokReplicas 500 -RealReplicasPerDep 10
 
+        if ($CheckDuplicateEndpoint) {
+            Write-Log "Checking for duplicate endpoint IPs after Step 5 (Scale UP)..."
+            if (Test-DuplicateEndpointIPs) {
+                Write-Log "BREAKING OUT: Duplicate endpoint IPs detected at iteration $iteration (after Scale UP #2)!" "ERROR"
+                $duplicateFound = $true
+                break
+            }
+            Write-Log "No duplicate endpoint IPs found." "SUCCESS"
+        }
+
         # Step 6: Scale to ZERO
         Step6-ScaleToZero
 
         # Step 7: Scale UP again (500 KWOK, 10 real each)
         Step3-ScaleUp -KwokReplicas 500 -RealReplicasPerDep 10
+
+        if ($CheckDuplicateEndpoint) {
+            Write-Log "Checking for duplicate endpoint IPs after Step 7 (Scale UP)..."
+            if (Test-DuplicateEndpointIPs) {
+                Write-Log "BREAKING OUT: Duplicate endpoint IPs detected at iteration $iteration (after Scale UP #3)!" "ERROR"
+                $duplicateFound = $true
+                break
+            }
+            Write-Log "No duplicate endpoint IPs found." "SUCCESS"
+        }
 
         # Step 8: Delete all deployments
         Step8-DeleteDeployments

@@ -6,7 +6,8 @@ param(
     [string]$Namespace,
     [string]$DaemonSetLabel,
     [string]$TraceFile = "server.etl",
-    [string]$LocalTraceDir = ".\traces"
+    [string]$LocalTraceDir = ".\traces",
+    [switch]$CheckDuplicateEndpoint
 )
 
 Import-Module -Force .\modules\constants.psm1
@@ -43,6 +44,28 @@ function Stop-Trace {
     }
 }
 
+function Test-DuplicateEndpointIPs {
+    $foundDuplicate = $false
+    foreach ($pod in $hpcPods) {
+        Write-Host "  Querying HNS endpoints on $pod ..." -ForegroundColor Cyan
+        $raw = kubectl exec -n $Namespace $pod -- powershell -Command "(Get-HnsEndpoint).IPAddress" 2>$null
+        if (-not $raw) { continue }
+
+        $ipCounts = @{}
+        $raw -split "`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ } | ForEach-Object {
+            if ($ipCounts.ContainsKey($_)) { $ipCounts[$_]++ } else { $ipCounts[$_] = 1 }
+        }
+
+        $dupes = $ipCounts.GetEnumerator() | Where-Object { $_.Value -gt 1 }
+        if ($dupes) {
+            $dupeList = ($dupes | ForEach-Object { "$($_.Key) (x$($_.Value))" }) -join ", "
+            Write-Host "  DUPLICATE HNS endpoint IPs on ${pod}: $dupeList" -ForegroundColor Red
+            $foundDuplicate = $true
+        }
+    }
+    return $foundDuplicate
+}
+
 function Loop-DepRecreation {
     Write-Host "`n===== Starting churn loop ($Iterations iterations) =====" -ForegroundColor Yellow
     for ($i = 1; $i -le $Iterations; $i++) {
@@ -53,6 +76,15 @@ function Loop-DepRecreation {
         Start-Sleep -Seconds $CreateWaitSeconds
         # Delete any pods stuck in Terminating state to speed up the process
         kubectl get pods -n $Namespace --no-headers | Select-String "Terminating" | ForEach-Object { $pod = ($_.ToString().Trim() -split '\s+')[0]; Write-Host "Deleting $pod"; kubectl delete pod $pod -n $Namespace --grace-period=0 --force }
+
+        if ($CheckDuplicateEndpoint) {
+            Write-Host "  Checking for duplicate endpoint IPs..." -ForegroundColor Cyan
+            if (Test-DuplicateEndpointIPs) {
+                Write-Host "  BREAKING OUT: Duplicate endpoint IPs detected at iteration $i!" -ForegroundColor Red
+                break
+            }
+            Write-Host "  No duplicate endpoint IPs found." -ForegroundColor Green
+        }
     }
 }
 
