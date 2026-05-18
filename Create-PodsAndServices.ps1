@@ -1,6 +1,7 @@
 param(
     [Parameter(Mandatory=$false)][switch]$SingleStackOnly,
-    [Parameter(Mandatory=$false)][switch]$UseNetConnectImage
+    [Parameter(Mandatory=$false)][switch]$UseNetConnectImage,
+    [Parameter(Mandatory=$false)][switch]$AttachRegistry
 )
 
 Import-Module -Force .\modules\constants.psm1
@@ -13,7 +14,10 @@ Write-Host "Creating Pods and Services..." -ForegroundColor Cyan
 kubectl create namespace $namespace
 (Get-Content .\Yamls\hpc-ds-win22.yaml).Replace("OS_SKU", $osSku) | kubectl.exe create -f -
 if ($UseNetConnectImage) {
-    az aks update -n $Global:CLUSTER_NAME -g $Global:RG_NAME --attach-acr $netconnectRegistry
+    if ($AttachRegistry) {
+        Write-Host "Attaching ACR $netconnectRegistry to AKS cluster..." -ForegroundColor Yellow
+        az aks update -n $Global:CLUSTER_NAME -g $Global:RG_NAME --attach-acr $netconnectRegistry
+    }
     (Get-Content .\Yamls\Dep-NC-Client.yaml) | kubectl.exe create -f -
     (Get-Content .\Yamls\Dep-NC-Server.yaml) | kubectl.exe create -f -
     if ($SingleStackOnly) {
