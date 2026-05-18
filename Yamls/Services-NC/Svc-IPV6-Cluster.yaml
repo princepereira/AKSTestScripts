@@ -15,6 +15,6 @@ spec:
   type: LoadBalancer
   ports:
   - name: tcp
-    port: {TCP_PORT}
+    port: 4444
     protocol: TCP
-    targetPort: {TCP_PORT}
+    targetPort: 4444
