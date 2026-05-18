@@ -16,14 +16,20 @@ if ($UseNetConnectImage) {
     az aks update -n $Global:CLUSTER_NAME -g $Global:RG_NAME --attach-acr $netconnectRegistry
     (Get-Content .\Yamls\Dep-NC-Client.yaml) | kubectl.exe create -f -
     (Get-Content .\Yamls\Dep-NC-Server.yaml) | kubectl.exe create -f -
+    if ($SingleStackOnly) {
+        kubectl create -f .\Yamls\Services-NC\Svc-IPV4-Cluster.yaml
+        kubectl create -f .\Yamls\Services-NC\Svc-IPV4-Local.yaml
+    } else {
+        kubectl create -f .\Yamls\Services\.
+    }
 } else {
     (Get-Content .\Yamls\Dep-Http-Client.yaml) | kubectl.exe create -f -
     (Get-Content .\Yamls\Dep-Http-Server.yaml) | kubectl.exe create -f -
-}
-if ($SingleStackOnly) {
-    kubectl create -f .\Yamls\Services\Svc-IPV4-Cluster.yaml
-    kubectl create -f .\Yamls\Services\Svc-IPV4-Local.yaml
-} else {
-    kubectl create -f .\Yamls\Services\.
+    if ($SingleStackOnly) {
+        kubectl create -f .\Yamls\Services\Svc-IPV4-Cluster.yaml
+        kubectl create -f .\Yamls\Services\Svc-IPV4-Local.yaml
+    } else {
+        kubectl create -f .\Yamls\Services\.
+    }
 }
 Write-Host "Pods and Services created successfully." -ForegroundColor Green

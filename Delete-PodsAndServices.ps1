@@ -11,11 +11,12 @@ Write-Host "Deleting Pods and Services..." -ForegroundColor Cyan
 if ($UseNetConnectImage) {
     (Get-Content .\Yamls\Dep-NC-Client.yaml) | kubectl.exe delete -f -
     (Get-Content .\Yamls\Dep-NC-Server.yaml) | kubectl.exe delete -f -
+    kubectl delete -f .\Yamls\Services-NC\.
 } else {
     (Get-Content .\Yamls\Dep-Http-Client.yaml) | kubectl.exe delete -f -
     (Get-Content .\Yamls\Dep-Http-Server.yaml) | kubectl.exe delete -f -
+    kubectl delete -f .\Yamls\Services\.
 }
-kubectl delete -f .\Yamls\Services\.
 # kubectl delete -f .\Yamls\hpc-ds-win.yaml
 # (Get-Content .\Yamls\hpc-ds-win22.yaml).Replace("OS_SKU", $osSku) | kubectl.exe delete -f -
 Write-Host "Pods and Services deleted successfully." -ForegroundColor Green

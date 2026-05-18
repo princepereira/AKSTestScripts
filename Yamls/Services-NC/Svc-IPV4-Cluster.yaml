@@ -3,11 +3,11 @@ kind: Service
 metadata:
   labels:
     app: server
-  name: server-ipv6-cluster
+  name: server-ipv4-cluster
   namespace: demo
 spec:
   ipFamilies:
-  - IPv6
+  - IPv4
   ipFamilyPolicy: SingleStack
   selector:
     app: server
@@ -15,6 +15,6 @@ spec:
   type: LoadBalancer
   ports:
   - name: tcp
-    port: {TCP_PORT}
+    port: 80
     protocol: TCP
-    targetPort: {TCP_PORT}
+    targetPort: 80
