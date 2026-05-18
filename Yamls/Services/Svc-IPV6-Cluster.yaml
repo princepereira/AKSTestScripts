@@ -2,15 +2,15 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: httpserver
-  name: httpserver-ipv6-cluster
+    app: server
+  name: server-ipv6-cluster
   namespace: demo
 spec:
   ipFamilies:
   - IPv6
   ipFamilyPolicy: SingleStack
   selector:
-    app: httpserver
+    app: server
   sessionAffinity: None
   type: LoadBalancer
   ports:

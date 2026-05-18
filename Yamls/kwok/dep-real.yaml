@@ -4,21 +4,21 @@ metadata:
   name: dep-real-index
   namespace: demo
   labels:
-    app: httpserver
+    app: server
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: httpserver
+      app: server
   template:
     metadata:
       labels:
-        app: httpserver
+        app: server
     spec:
       nodeSelector:
         kubernetes.azure.com/os-sku: Windows2022
       containers:
-        - name: httpserver
+        - name: server
           image: mcr.microsoft.com/dotnet/framework/samples:aspnetapp
           ports:
             - containerPort: 80

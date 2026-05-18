@@ -39,5 +39,3 @@ spec:
           path: C:\k
       nodeSelector:
         kubernetes.io/os: windows
-        # kubernetes.azure.com/os-sku: OS_SKU
-        # kubernetes.azure.com/os-sku: Windows2022

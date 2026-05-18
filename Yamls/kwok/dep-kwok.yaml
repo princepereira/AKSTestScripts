@@ -4,16 +4,16 @@ metadata:
   name: dep-kwok
   namespace: demo
   labels:
-    app: httpserver
+    app: server
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: httpserver
+      app: server
   template:
     metadata:
       labels:
-        app: httpserver
+        app: server
     spec:
       nodeSelector:
         type: kwok

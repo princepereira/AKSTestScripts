@@ -2,8 +2,8 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: httpserver
-  name: httpserver-prefer-dual-local
+    app: server
+  name: server-prefer-dual-local
   namespace: demo
 spec:
   externalTrafficPolicy: Local
@@ -12,7 +12,7 @@ spec:
   - IPv6
   ipFamilyPolicy: PreferDualStack
   selector:
-    app: httpserver
+    app: server
   sessionAffinity: None
   type: LoadBalancer
   ports:

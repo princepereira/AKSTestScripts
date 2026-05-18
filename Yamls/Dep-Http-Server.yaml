@@ -1,24 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: httpserver
+  name: server
   namespace: demo
   labels:
-    app: httpserver
+    app: server
 spec:
   replicas: 8
   selector:
     matchLabels:
-      app: httpserver
+      app: server
   template:
     metadata:
       labels:
-        app: httpserver
+        app: server
     spec:
       nodeSelector:
         kubernetes.io/os: windows
       containers:
-        - name: httpserver
+        - name: server
           image: mcr.microsoft.com/dotnet/framework/samples:aspnetapp
           ports:
             - containerPort: 80

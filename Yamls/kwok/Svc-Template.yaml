@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: httpserver
+    app: server
   name: __SERVICENAME__
   namespace: __NAMESPACE__
 spec:
@@ -11,7 +11,7 @@ spec:
   - __IPFAMILY__
   ipFamilyPolicy: SingleStack
   selector:
-    app: httpserver
+    app: server
   sessionAffinity: None
   type: LoadBalancer
   ports:

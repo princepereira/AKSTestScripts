@@ -73,13 +73,13 @@ $MaxRealPods = 15
 
 # Service configurations: Name prefix, IP Family, Traffic Policy
 $ServiceConfigs = @(
-    @{ NamePrefix = "httpserver-ipv4-cluster"; IPFamily = "IPv4"; TrafficPolicy = "Cluster" },
-    @{ NamePrefix = "httpserver-ipv4-local"; IPFamily = "IPv4"; TrafficPolicy = "Local" }
+    @{ NamePrefix = "server-ipv4-cluster"; IPFamily = "IPv4"; TrafficPolicy = "Cluster" },
+    @{ NamePrefix = "server-ipv4-local"; IPFamily = "IPv4"; TrafficPolicy = "Local" }
 )
 if (-not $SkipIPv6) {
     $ServiceConfigs += @(
-        @{ NamePrefix = "httpserver-ipv6-cluster"; IPFamily = "IPv6"; TrafficPolicy = "Cluster" },
-        @{ NamePrefix = "httpserver-ipv6-local"; IPFamily = "IPv6"; TrafficPolicy = "Local" }
+        @{ NamePrefix = "server-ipv6-cluster"; IPFamily = "IPv6"; TrafficPolicy = "Cluster" },
+        @{ NamePrefix = "server-ipv6-local"; IPFamily = "IPv6"; TrafficPolicy = "Local" }
     )
 }
 
@@ -189,12 +189,12 @@ function Wait-ForServicesReady {
         $elapsed = (Get-Date) - $startTime
         if ($elapsed.TotalSeconds -gt $TimeoutSeconds) {
             Write-Log "Timeout waiting for services to get ExternalIP. Check service status." "ERROR"
-            kubectl get svc -n $Namespace | Select-String "httpserver-ip"
+            kubectl get svc -n $Namespace | Select-String "server-ip"
             return $false
         }
 
         $services = kubectl get svc -n $Namespace -o json | ConvertFrom-Json
-        $churnServices = $services.items | Where-Object { $_.metadata.name -match "httpserver-ip" }
+        $churnServices = $services.items | Where-Object { $_.metadata.name -match "server-ip" }
         
         # Count services with ExternalIP assigned (not <pending>)
         $readyServices = $churnServices | Where-Object { 
@@ -409,7 +409,7 @@ function Step1-CreateServices {
     # Verify services created
     Start-Sleep -Seconds 2
     $services = kubectl get svc -n $Namespace -o json | ConvertFrom-Json
-    $churnServices = $services.items | Where-Object { $_.metadata.name -match "httpserver-ip" }
+    $churnServices = $services.items | Where-Object { $_.metadata.name -match "server-ip" }
     Write-Log "Total services created: $($churnServices.Count)" "INFO"
 
     # Wait for all services to get ExternalIP assigned
@@ -432,7 +432,7 @@ function Step2-CreateDeployments {
     }
 
     # Wait for initial pods
-    Wait-ForPods -LabelSelector "app=httpserver" -ExpectedCount (1 + $DepRealCount) -Namespace $Namespace -TimeoutSeconds $TimeoutSeconds
+    Wait-ForPods -LabelSelector "app=server" -ExpectedCount (1 + $DepRealCount) -Namespace $Namespace -TimeoutSeconds $TimeoutSeconds
 
     Write-Log "All deployments created." "SUCCESS"
 }
@@ -470,7 +470,7 @@ function Step3-ScaleUp {
         kubectl scale deployment dep-kwok -n $Namespace --replicas=$currentKwok 2>&1 | Out-Null
         
         $totalExpected = $currentKwok + $totalRealExpected
-        Wait-ForPods -LabelSelector "app=httpserver" -ExpectedCount $totalExpected -Namespace $Namespace -TimeoutSeconds $TimeoutSeconds
+        Wait-ForPods -LabelSelector "app=server" -ExpectedCount $totalExpected -Namespace $Namespace -TimeoutSeconds $TimeoutSeconds
         Write-Log "KWOK scaled to $currentKwok" "INFO"
     }
 
@@ -504,7 +504,7 @@ function Step4-ScaleDown {
         kubectl scale deployment dep-kwok -n $Namespace --replicas=$currentKwok 2>&1 | Out-Null
         
         $totalExpected = $currentKwok + $totalRealExpected
-        Wait-ForPods -LabelSelector "app=httpserver" -ExpectedCount $totalExpected -Namespace $Namespace -TimeoutSeconds $TimeoutSeconds
+        Wait-ForPods -LabelSelector "app=server" -ExpectedCount $totalExpected -Namespace $Namespace -TimeoutSeconds $TimeoutSeconds
         Write-Log "KWOK scaled to $currentKwok" "INFO"
     }
 
@@ -535,7 +535,7 @@ function Step6-ScaleToZero {
         $currentKwok = [math]::Max($currentKwok - $KwokScaleStep, 0)
         kubectl scale deployment dep-kwok -n $Namespace --replicas=$currentKwok 2>&1 | Out-Null
         
-        Wait-ForPods -LabelSelector "app=httpserver" -ExpectedCount $currentKwok -Namespace $Namespace -TimeoutSeconds $TimeoutSeconds
+        Wait-ForPods -LabelSelector "app=server" -ExpectedCount $currentKwok -Namespace $Namespace -TimeoutSeconds $TimeoutSeconds
         Write-Log "KWOK scaled to $currentKwok" "INFO"
     }
 
@@ -557,7 +557,7 @@ function Step8-DeleteDeployments {
 
     # Wait for pods to terminate
     Start-Sleep -Seconds 5
-    Wait-ForPodsTerminated -LabelSelector "app=httpserver" -Namespace $Namespace -TimeoutSeconds $TimeoutSeconds
+    Wait-ForPodsTerminated -LabelSelector "app=server" -Namespace $Namespace -TimeoutSeconds $TimeoutSeconds
 
     Write-Log "All deployments deleted." "SUCCESS"
 }

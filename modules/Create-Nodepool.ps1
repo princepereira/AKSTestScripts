@@ -7,10 +7,27 @@ $nodePoolName = $Global:NODE_POOL_NAME
 $nodeCount = $Global:NODE_COUNT
 $osSku = $Global:OS_SKU
 $nodeVmSize = $Global:NODE_VM_SIZE
+$zones = $Global:NODE_POOL_ZONES
 
-Write-Host "Creating Windows Node Pool: $nodePoolName in Cluster: $clusterName, OS SKU: $osSku, Node Count: $nodeCount" -ForegroundColor Cyan
-Write-Host "Executing [New-AzAksNodePool -ResourceGroupName $rgName -ClusterName $clusterName -Name $nodePoolName -VmSize $nodeVmSize -Count $nodeCount -OsType 'Windows' -OsSKU $osSku -VmSetType 'VirtualMachineScaleSets' -OsDiskSize 256]" -ForegroundColor Yellow
-New-AzAksNodePool -ResourceGroupName $rgName -ClusterName $clusterName -Name $nodePoolName -VmSize $nodeVmSize -Count $nodeCount -OsType 'Windows' -OsSKU $osSku -VmSetType 'VirtualMachineScaleSets' -OsDiskSize 256
+$zoneArgs = ""
+if ($zones -and $zones.Count -gt 0) {
+    $zoneArgs = "--zones $($zones -join ' ')"
+}
+
+$zonesDisplay = if ($zones -and $zones.Count -gt 0) { $zones -join ' ' } else { 'None' }
+Write-Host "Creating Windows Node Pool: $nodePoolName in Cluster: $clusterName, OS SKU: $osSku, Node Count: $nodeCount, Zones: $zonesDisplay" -ForegroundColor Cyan
+
+$fipsArgs = ""
+if ($osSku -match "^Windows20(25|[3-9]\d)") {
+    az extension add -n aks-preview
+    az extension update --name aks-preview
+    az feature register --namespace "Microsoft.ContainerService" --name "AKSWindowsAnnualPreview"
+    $fipsArgs = "--enable-fips-image"
+}
+
+$cmd = "az aks nodepool add --resource-group $rgName --cluster-name $clusterName --name $nodePoolName --node-count $nodeCount --node-vm-size $nodeVmSize --os-type Windows --os-sku $osSku --vm-set-type VirtualMachineScaleSets $fipsArgs $zoneArgs"
+Write-Host "Executing [$cmd]" -ForegroundColor Yellow
+Invoke-Expression $cmd
 
 # Wait for nodes to be ready with 8-minute timeout
 Write-Host "Waiting for $nodeCount node(s) in nodepool '$nodePoolName' to be Ready..." -ForegroundColor Yellow
