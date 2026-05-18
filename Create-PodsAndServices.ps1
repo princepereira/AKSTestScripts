@@ -24,7 +24,7 @@ if ($UseNetConnectImage) {
         kubectl create -f .\Yamls\Services-NC\Svc-IPV4-Cluster.yaml
         kubectl create -f .\Yamls\Services-NC\Svc-IPV4-Local.yaml
     } else {
-        kubectl create -f .\Yamls\Services\.
+        kubectl create -f .\Yamls\Services-NC\.
     }
 } else {
     (Get-Content .\Yamls\Dep-Http-Client.yaml) | kubectl.exe create -f -
