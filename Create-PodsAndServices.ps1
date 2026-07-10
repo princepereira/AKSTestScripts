@@ -33,7 +33,8 @@ if ($UseNetConnectImage) {
         kubectl create -f .\Yamls\Services\Svc-IPV4-Cluster.yaml
         kubectl create -f .\Yamls\Services\Svc-IPV4-Local.yaml
     } else {
-        kubectl create -f .\Yamls\Services\.
+        # kubectl create -f .\Yamls\Services\.
+        kubectl create -f .\Yamls\Services\Svc-IPV4-Cluster.yaml
     }
 }
 Write-Host "Pods and Services created successfully." -ForegroundColor Green

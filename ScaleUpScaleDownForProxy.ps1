@@ -39,9 +39,9 @@ for($i = 0; $i -le 15; $i++) {
 	ScaleDeployment -deploymentName "server" -replicas 0
 	Write-Host "Iteration $i : Scaling up to 20 after Scale Down to 0..." -ForegroundColor Cyan
 	ScaleDeployment -deploymentName "server" -replicas 20
-	ForceDeleteAllPods
+	# ForceDeleteAllPods
 }
 
 Write-Host "Deleting Deployment..." -ForegroundColor Cyan
 kubectl delete -f .\Yamls\Dep-NC-Server.yaml
-ForceDeleteAllPods
+# ForceDeleteAllPods

@@ -9,7 +9,7 @@ $Global:NETCONNECT_REGISTRY="wcninternal"
 # az aks get-versions --location westus2 --output table
 $Global:K8S_VERSION="1.34.6"
 $Global:NODE_POOL_NAME="npwin"
-$Global:OS_SKU="Windows2022"
+$Global:OS_SKU="Windows2025"
 $Global:NODE_COUNT="2"
 $Global:NODE_VM_SIZE="Standard_D4s_v5" # Standard_D4s_v5 (Low CPU) / Standard_E8-2as_v5 (High CPU) / Standard_E8-2as_v7
 $Global:NODE_POOL_ZONES=@(1,2)  # e.g. @(1,2,3) for zones 1,2,3; empty for no zones
